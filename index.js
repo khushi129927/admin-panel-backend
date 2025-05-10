@@ -3,14 +3,22 @@ const express = require("express");
 const cors = require("cors");
 const db = require("./src/config/db");
 require("./src/models/taskModel");
-require("./src/models/userModel"); 
+require("./src/models/userModel");
 require("./src/models/subscriptionModel");
 require("./src/models/testModel");
 
 const app = express();
 app.use(express.json());
-app.use(cors());
 
+// Set up CORS with specific origin
+app.use(cors({
+    origin: ["https://neuroeq.infinityfreeapp.com"], // Replace with your actual frontend URL
+    methods: ["GET", "POST", "PUT", "DELETE"],
+    credentials: true,
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// Routes
 const userRoutes = require("./src/routes/userRoute");
 const taskRoutes = require("./src/routes/taskRoute");
 const subscriptionRoutes = require("./src/routes/subscriptionRoute");
@@ -21,5 +29,6 @@ app.use("/api/task", taskRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 
+// Server setup
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

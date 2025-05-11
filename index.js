@@ -12,7 +12,7 @@ app.use(express.json());
 
 // Set up CORS with specific origin
 app.use(cors({
-    origin: ["https://neuroeq.infinityfreeapp.com"], // Replace with your actual frontend URL
+    origin: ["https://bright-profiterole-c0d6ce.netlify.app"], // Replace with your actual frontend URL
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"]
@@ -23,6 +23,16 @@ const userRoutes = require("./src/routes/userRoute");
 const taskRoutes = require("./src/routes/taskRoute");
 const subscriptionRoutes = require("./src/routes/subscriptionRoute");
 const testRoutes = require("./src/routes/testRoute");
+
+app.get("/api/test-db", async (req, res) => {
+    try {
+        const [rows] = await db.query("SHOW TABLES");
+        res.status(200).json(rows);
+    } catch (error) {
+        res.status(500).json({ error: error.message });
+    }
+});
+
 
 app.use("/api/users", userRoutes);
 app.use("/api/task", taskRoutes);

@@ -39,6 +39,10 @@ app.get("/api/test-db", async (req, res) => {
     }
 });
 
+app.get("/", (req, res) => {
+    res.send("Welcome to the Admin Panel Backend API");
+  });
+  
 app.use("/api/users", userRoutes);
 app.use("/api/task", taskRoutes);
 app.use("/api/test", testRoutes);

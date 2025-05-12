@@ -78,3 +78,15 @@ exports.getTask = (req, res) => {
     res.status(200).json({ success: true, data: results });
   });
 };
+
+// 📤 Test Database Connection
+exports.testDatabase = (req, res) => {
+  const sql = "SELECT 1 + 1 AS result";
+  db.query(sql, (err, result) => {
+    if (err) {
+      console.error("❌ Database test error:", err.message);
+      return res.status(500).json({ error: "Database connection failed" });
+    }
+    res.status(200).json({ success: true, message: "Database connected successfully", result: result });
+  });
+};

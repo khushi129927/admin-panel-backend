@@ -24,6 +24,12 @@ const taskRoutes = require("./src/routes/taskRoute");
 const subscriptionRoutes = require("./src/routes/subscriptionRoute");
 const testRoutes = require("./src/routes/testRoute");
 
+// Error Handling Middleware
+app.use((err, req, res, next) => {
+    console.error("ERROR: ", err.stack);
+    res.status(500).json({ error: "Internal Server Error", details: err.message });
+});
+
 app.get("/api/test-db", async (req, res) => {
     try {
         const [rows] = await db.query("SHOW TABLES");
@@ -32,7 +38,6 @@ app.get("/api/test-db", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
 
 app.use("/api/users", userRoutes);
 app.use("/api/task", taskRoutes);

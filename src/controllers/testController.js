@@ -42,7 +42,7 @@ exports.uploadTestQuestions = async (req, res) => {
       new Date()
     ]));
 
-    const sql = `INSERT INTO test (
+    const sql = `INSERT INTO tests (
       id, quarter, age, objective, question,
       option1, points1, option2, points2,
       option3, points3, option4, points4,
@@ -68,7 +68,7 @@ exports.uploadTestQuestions = async (req, res) => {
 // 📤 Get All Tests (Async/Await)
 exports.getTests = async (req, res) => {
   try {
-    const [results] = await db.execute(`SELECT * FROM test ORDER BY created_at DESC`);
+    const [results] = await db.execute(`SELECT * FROM tests ORDER BY created_at DESC`);
     res.status(200).json({ success: true, data: results });
   } catch (error) {
     console.error("❌ Get Tests Error:", error.message);

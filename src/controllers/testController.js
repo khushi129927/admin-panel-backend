@@ -4,8 +4,12 @@ const xlsx = require("xlsx");
 const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
 
+// ✅ Configure Multer with Increased Size Limit (20MB)
 const storage = multer.memoryStorage();
-const upload = multer({ storage }).single("file");
+const upload = multer({
+  storage,
+  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
+}).single("file");
 
 // 🚀 Optimized Upload Test Questions (Async/Await)
 exports.uploadTestQuestions = async (req, res) => {
@@ -18,11 +22,7 @@ exports.uploadTestQuestions = async (req, res) => {
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawData = xlsx.utils.sheet_to_json(sheet);
 
-      // ✅ Check if the file has valid data
-      if (!rawData.length) {
-        console.error("❌ Excel file is empty.");
-        return res.status(400).json({ error: "The uploaded file is empty." });
-      }
+      if (!rawData.length) return res.status(400).json({ error: "The uploaded file is empty." });
 
       // ✅ Validate columns
       const requiredColumns = [
@@ -43,7 +43,7 @@ exports.uploadTestQuestions = async (req, res) => {
       }
 
       // ⚡ Map formatted Excel columns to database fields
-      const tests = rawData.map(row => [
+      const tests = rawData.map(row => ([
         uuidv4(),
         row.Quarter || "",
         row.Age || "",
@@ -58,14 +58,8 @@ exports.uploadTestQuestions = async (req, res) => {
         row["Option 4"] || "",
         row["Points 4"] || "",
         new Date()
-      ]);
+      ]));
 
-      if (!tests.length) {
-        console.error("❌ No valid test questions found in the file.");
-        return res.status(400).json({ error: "No valid test questions found." });
-      }
-
-      // ✅ Using Batch Insert with Async/Await
       const sql = `
         INSERT INTO tests (
           id, quarter, age, objective, question,
@@ -73,12 +67,12 @@ exports.uploadTestQuestions = async (req, res) => {
           option3, points3, option4, points4, created_at
         ) VALUES ?
       `;
-      await db.execute(sql, [tests]);
 
+      await db.execute(sql, [tests]);
       res.status(201).json({ success: true, message: `${tests.length} questions uploaded.` });
     });
   } catch (err) {
-    console.error("❌ Upload Error:", err);
+    console.error("❌ Upload Error:", err.message);
     res.status(500).json({ error: "Failed to upload test questions." });
   }
 };
@@ -91,5 +85,16 @@ exports.getTests = async (req, res) => {
   } catch (error) {
     console.error("❌ Get Tests Error:", error.message);
     res.status(500).json({ error: "Failed to get test questions." });
+  }
+};
+
+// 📤 Test Database Connection (Async/Await)
+exports.testDatabase = async (req, res) => {
+  try {
+    const [result] = await db.execute("SELECT 1 + 1 AS result");
+    res.status(200).json({ success: true, message: "Database connected successfully", result: result });
+  } catch (error) {
+    console.error("❌ Database test error:", error.message);
+    res.status(500).json({ error: "Database connection failed" });
   }
 };

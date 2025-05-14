@@ -1,4 +1,3 @@
-// 📂 controllers/testController.js
 const db = require("../config/db");
 const xlsx = require("xlsx");
 const { v4: uuidv4 } = require("uuid");
@@ -8,7 +7,14 @@ const path = require("path");
 
 // ✅ Logging Errors to a File (for debugging)
 const logErrorToFile = (error) => {
-  const logFile = path.join(__dirname, "../logs/error.log");
+  const logDir = path.join(__dirname, "../logs");
+  const logFile = path.join(logDir, "error.log");
+
+  // ✅ Create logs directory if it does not exist
+  if (!fs.existsSync(logDir)) {
+    fs.mkdirSync(logDir);
+  }
+
   const errorMessage = `[${new Date().toISOString()}] ${error.stack || error}\n\n`;
   fs.appendFileSync(logFile, errorMessage);
 };
@@ -70,19 +76,12 @@ exports.uploadTestQuestions = async (req, res) => {
           option3, points3,
           option4, points4,
           created_at
-        ) VALUES ?`;
+        ) VALUES ${entries.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ")}
+      `;
 
-      // ✅ Execute Batch Insert with Error Handling
-      await db.execute(sql, [entries])
-        .then(() => {
-          console.log("✅ Successfully uploaded questions:", entries.length);
-          res.status(201).json({ success: true, message: `${entries.length} questions uploaded successfully` });
-        })
-        .catch((dbError) => {
-          console.error("❌ Database Error:", dbError);
-          logErrorToFile(dbError);
-          res.status(500).json({ error: "Database Error: Failed to save test questions." });
-        });
+      await db.execute(sql, entries.flat());
+      console.log("✅ Successfully uploaded questions:", entries.length);
+      res.status(201).json({ success: true, message: `${entries.length} questions uploaded successfully` });
     });
   } catch (error) {
     console.error("❌ General Error:", error);

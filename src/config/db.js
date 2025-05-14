@@ -1,4 +1,6 @@
+// db.js
 const mysql = require("mysql2/promise");
+
 const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
@@ -13,13 +15,5 @@ const pool = mysql.createPool({
     rejectUnauthorized: false
   }
 });
-pool.getConnection()
-  .then(connection => {
-    console.log("✅ Database connected");
-    connection.release();
-  })
-  .catch(error => {
-    console.error("❌ Database connection failed:", error);
-  });
 
 module.exports = pool;

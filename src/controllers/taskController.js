@@ -1,4 +1,3 @@
-// 📁 src/controllers/taskController.js
 const db = require("../config/db");
 const xlsx = require("xlsx");
 const { v4: uuidv4 } = require("uuid");
@@ -6,14 +5,11 @@ const multer = require("multer");
 const storage = multer.memoryStorage();
 const upload = multer({ storage }).single("file");
 
-// 📁 Optimized Upload Excel & Insert MCQs
+// 📁 Upload Excel & Insert MCQs (Optimized with async/await)
 exports.uploadTask = async (req, res) => {
   try {
     upload(req, res, async (err) => {
-      if (err) {
-        console.error("❌ Multer Error:", err.message);
-        return res.status(400).json({ error: err.message });
-      }
+      if (err) return res.status(400).json({ error: err.message });
       if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
       const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
@@ -45,58 +41,42 @@ exports.uploadTask = async (req, res) => {
         new Date()
       ]));
 
-      const batchSize = 1000;
-      for (let i = 0; i < entries.length; i += batchSize) {
-        const batch = entries.slice(i, i + batchSize);
-        const placeholders = batch.map(() => "(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)").join(", ");
-        const values = batch.flat();
+      const sql = `
+        INSERT INTO task (
+          id, mcq1, mcq2, mcq3,
+          mcq1_opt1, mcq1_opt2, mcq1_opt3, mcq1_opt4,
+          mcq2_opt1, mcq2_opt2, mcq2_opt3, mcq2_opt4,
+          mcq3_opt1, mcq3_opt2, mcq3_opt3, mcq3_opt4,
+          week, task_owner, task, created_at
+        ) VALUES ?`;
 
-        const sql = `
-          INSERT INTO task (
-            id, mcq1, mcq2, mcq3,
-            mcq1_opt1, mcq1_opt2, mcq1_opt3, mcq1_opt4,
-            mcq2_opt1, mcq2_opt2, mcq2_opt3, mcq2_opt4,
-            mcq3_opt1, mcq3_opt2, mcq3_opt3, mcq3_opt4,
-            week, task_owner, task, created_at
-          ) VALUES ${placeholders}
-        `;
-
-        try {
-          await db.query(sql, values);
-          console.log(`✅ Batch ${i / batchSize + 1} inserted successfully`);
-        } catch (error) {
-          console.error("❌ SQL Upload Error:", error.message);
-          return res.status(500).json({ error: "Failed to insert batch. " + error.message });
-        }
-      }
-
+      await db.execute(sql, [entries]);
       res.status(201).json({ success: true, message: `${entries.length} entries uploaded successfully` });
     });
   } catch (error) {
-    console.error("❌ Upload Task Error:", error.message);
-    res.status(500).json({ error: "Server error while uploading tasks" });
+    console.error("❌ Upload Error:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
-
-
-// 📤 Get All
-exports.getTask = (req, res) => {
-  const sql = `SELECT * FROM task ORDER BY created_at DESC`;
-  db.query(sql, (err, results) => {
-    if (err) return res.status(500).json({ error: err.message });
+// 📤 Get All Tasks (Async/Await)
+exports.getTask = async (req, res) => {
+  try {
+    const [results] = await db.execute(`SELECT * FROM task ORDER BY created_at DESC`);
     res.status(200).json({ success: true, data: results });
-  });
+  } catch (error) {
+    console.error("❌ Get Tasks Error:", error.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
 
-// 📤 Test Database Connection
-exports.testDatabase = (req, res) => {
-  const sql = "SELECT 1 + 1 AS result";
-  db.query(sql, (err, result) => {
-    if (err) {
-      console.error("❌ Database test error:", err.message);
-      return res.status(500).json({ error: "Database connection failed" });
-    }
+// 📤 Test Database Connection (Async/Await)
+exports.testDatabase = async (req, res) => {
+  try {
+    const [result] = await db.execute("SELECT 1 + 1 AS result");
     res.status(200).json({ success: true, message: "Database connected successfully", result: result });
-  });
+  } catch (error) {
+    console.error("❌ Database test error:", error.message);
+    res.status(500).json({ error: "Database connection failed" });
+  }
 };

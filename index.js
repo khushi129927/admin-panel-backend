@@ -48,7 +48,11 @@ app.get("/", (req, res) => {
     res.send("Welcome to the Admin Panel Backend API");
   });
 
+// Start the server
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });
+
+// Increase server timeout to 5 minutes
+server.setTimeout(300000); // 5 minutes

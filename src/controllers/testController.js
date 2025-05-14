@@ -3,39 +3,45 @@ const db = require("../config/db");
 const xlsx = require("xlsx");
 const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
 
-// ✅ Configure Multer with Memory Storage
+// ✅ Logging Errors to a File (for debugging)
+const logErrorToFile = (error) => {
+  const logFile = path.join(__dirname, "../logs/error.log");
+  const errorMessage = `[${new Date().toISOString()}] ${error.stack || error}\n\n`;
+  fs.appendFileSync(logFile, errorMessage);
+};
+
+// ✅ Configure Multer
 const storage = multer.memoryStorage();
 const upload = multer({ storage }).single("file");
 
-// ✅ Helper Function for Batch Insert
-async function insertTestQuestions(tests) {
-  const batchSize = 500; // Set the batch size (adjust based on your server capacity)
-  for (let i = 0; i < tests.length; i += batchSize) {
-    const batch = tests.slice(i, i + batchSize);
-    const sql = `
-      INSERT INTO test (
-        id, quarter, age, objective, question,
-        option1, points1, option2, points2,
-        option3, points3, option4, points4, created_at
-      ) VALUES ?
-    `;
-    await db.execute(sql, [batch]);
-  }
-}
-
-// ✅ Optimized Upload Test Questions (Async/Await with Chunking)
+// 📁 Upload Excel & Insert MCQs (Optimized with async/await)
 exports.uploadTestQuestions = async (req, res) => {
-  upload(req, res, async (err) => {
-    if (err) return res.status(400).json({ error: err.message });
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+  try {
+    upload(req, res, async (err) => {
+      if (err) {
+        console.error("❌ Multer Error:", err);
+        logErrorToFile(err);
+        return res.status(400).json({ error: "File upload failed." });
+      }
 
-    try {
+      if (!req.file) {
+        console.error("❌ No file uploaded.");
+        return res.status(400).json({ error: "No file uploaded" });
+      }
+
       const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawData = xlsx.utils.sheet_to_json(sheet);
 
-      if (!rawData.length) return res.status(400).json({ error: "The uploaded file is empty." });
+      if (!rawData.length) {
+        console.error("❌ No valid entries found in sheet.");
+        return res.status(400).json({ error: "No valid entries found in sheet" });
+      }
+
+      console.log("✅ Processing Excel rows:", rawData.length);
 
       const entries = rawData.map((row) => ([
         uuidv4(),
@@ -54,17 +60,35 @@ exports.uploadTestQuestions = async (req, res) => {
         new Date()
       ]));
 
-      if (!entries.length) return res.status(400).json({ error: "No valid test questions found." });
+      console.log("✅ Prepared entries for database:", entries.length);
 
-      // ✅ Use Batch Insert
-      await insertTestQuestions(entries);
+      const sql = `
+        INSERT INTO test (
+          id, quarter, age, objective, question,
+          option1, points1,
+          option2, points2,
+          option3, points3,
+          option4, points4,
+          created_at
+        ) VALUES ?`;
 
-      res.status(201).json({ success: true, message: `${entries.length} questions uploaded successfully.` });
-    } catch (error) {
-      console.error("❌ Upload Error:", error.message);
-      res.status(500).json({ error: "Internal Server Error" });
-    }
-  });
+      // ✅ Execute Batch Insert with Error Handling
+      await db.execute(sql, [entries])
+        .then(() => {
+          console.log("✅ Successfully uploaded questions:", entries.length);
+          res.status(201).json({ success: true, message: `${entries.length} questions uploaded successfully` });
+        })
+        .catch((dbError) => {
+          console.error("❌ Database Error:", dbError);
+          logErrorToFile(dbError);
+          res.status(500).json({ error: "Database Error: Failed to save test questions." });
+        });
+    });
+  } catch (error) {
+    console.error("❌ General Error:", error);
+    logErrorToFile(error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
 };
 
 // 📤 Get All Tests (Async/Await)
@@ -74,6 +98,7 @@ exports.getTests = async (req, res) => {
     res.status(200).json({ success: true, data: results });
   } catch (error) {
     console.error("❌ Get Tests Error:", error.message);
+    logErrorToFile(error);
     res.status(500).json({ error: "Failed to get test questions." });
   }
 };

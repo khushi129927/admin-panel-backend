@@ -70,13 +70,3 @@ exports.getTask = async (req, res) => {
   }
 };
 
-// 📤 Test Database Connection (Async/Await)
-exports.testDatabase = async (req, res) => {
-  try {
-    const [result] = await db.execute("SELECT 1 + 1 AS result");
-    res.status(200).json({ success: true, message: "Database connected successfully", result: result });
-  } catch (error) {
-    console.error("❌ Database test error:", error.message);
-    res.status(500).json({ error: "Database connection failed" });
-  }
-};

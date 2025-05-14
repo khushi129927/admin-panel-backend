@@ -4,14 +4,11 @@ const xlsx = require("xlsx");
 const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
 
-// ✅ Configure Multer with Increased Size Limit (20MB)
+// ✅ Configure Multer (Same as taskController)
 const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 20 * 1024 * 1024 }, // 20MB limit
-}).single("file");
+const upload = multer({ storage }).single("file");
 
-// 🚀 Optimized Upload Test Questions (Async/Await)
+// 🚀 Optimized Upload Test Questions (Async/Await with Batching)
 exports.uploadTestQuestions = async (req, res) => {
   try {
     upload(req, res, async (err) => {
@@ -36,13 +33,12 @@ exports.uploadTestQuestions = async (req, res) => {
       const missingColumns = requiredColumns.filter(col => !fileColumns.includes(col));
 
       if (missingColumns.length > 0) {
-        console.error("❌ Missing columns:", missingColumns);
         return res.status(400).json({ 
           error: `File is missing required columns: ${missingColumns.join(", ")}` 
         });
       }
 
-      // ⚡ Map formatted Excel columns to database fields
+      // ✅ Map formatted Excel columns to database fields
       const tests = rawData.map(row => ([
         uuidv4(),
         row.Quarter || "",
@@ -60,24 +56,31 @@ exports.uploadTestQuestions = async (req, res) => {
         new Date()
       ]));
 
-      const sql = `
-        INSERT INTO tests (
-          id, quarter, age, objective, question,
-          option1, points1, option2, points2, 
-          option3, points3, option4, points4, created_at
-        ) VALUES ?
-      `;
+      if (!tests.length) return res.status(400).json({ error: "No valid test questions found." });
 
-      await db.execute(sql, [tests]);
+      // ✅ Batched Insertion (500 rows per batch to prevent overload)
+      const batchSize = 500;
+      for (let i = 0; i < tests.length; i += batchSize) {
+        const batch = tests.slice(i, i + batchSize);
+        const sql = `
+          INSERT INTO tests (
+            id, quarter, age, objective, question,
+            option1, points1, option2, points2, 
+            option3, points3, option4, points4, created_at
+          ) VALUES ?
+        `;
+        await db.execute(sql, [batch]);
+      }
+
       res.status(201).json({ success: true, message: `${tests.length} questions uploaded.` });
     });
-  } catch (err) {
-    console.error("❌ Upload Error:", err.message);
+  } catch (error) {
+    console.error("❌ Upload Error:", error);
     res.status(500).json({ error: "Failed to upload test questions." });
   }
 };
 
-// 📤 Get All Tests (Async/Await)
+// 📤 Get All Tests (Async/Await, Consistent Structure)
 exports.getTests = async (req, res) => {
   try {
     const [results] = await db.execute(`SELECT * FROM tests ORDER BY created_at DESC`);
@@ -85,16 +88,5 @@ exports.getTests = async (req, res) => {
   } catch (error) {
     console.error("❌ Get Tests Error:", error.message);
     res.status(500).json({ error: "Failed to get test questions." });
-  }
-};
-
-// 📤 Test Database Connection (Async/Await)
-exports.testDatabase = async (req, res) => {
-  try {
-    const [result] = await db.execute("SELECT 1 + 1 AS result");
-    res.status(200).json({ success: true, message: "Database connected successfully", result: result });
-  } catch (error) {
-    console.error("❌ Database test error:", error.message);
-    res.status(500).json({ error: "Database connection failed" });
   }
 };

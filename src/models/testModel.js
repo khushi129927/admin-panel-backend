@@ -1,13 +1,7 @@
 const db = require("../config/db");
 
-db.connect((err) => {
-  if (err) {
-    console.error("Database connection failed: ", err.stack);
-    return;
-  }
-  console.log("Database connected");
-
-  const createTestTable = `
+const createTestTable = async () => {
+  const createTableQuery = `
     CREATE TABLE IF NOT EXISTS tests (
       id VARCHAR(36) PRIMARY KEY,
       quarter VARCHAR(100),
@@ -23,11 +17,14 @@ db.connect((err) => {
       option4 TEXT,
       points4 NUMERIC,
       created_at DATETIME
-    )
-  `;
+    )`;
 
-  db.query(createTestTable, (err) => {
-    if (err) console.error("Error creating test table: ", err);
-    else console.log("✅ Tests table ready");
-  });
-});
+  try {
+    await db.query(createTableQuery);
+    console.log("✅ Tests table created or already exists.");
+  } catch (err) {
+    console.error("❌ Error creating Tests table:", err.message);
+  }
+};
+
+createTestTable();

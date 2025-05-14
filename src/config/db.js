@@ -1,23 +1,25 @@
-const mysql = require("mysql2");
-
-const db = mysql.createConnection({
+const mysql = require("mysql2/promise");
+const pool = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  port: process.env.DB_PORT || 3306,
+  port: process.env.DB_PORT,
   waitForConnections: true,
-  connectTimeout: 50000 ,
+  connectionLimit: 10,
   queueLimit: 0,
-});
-
-
-db.connect((err) => {
-  if (err) {
-    console.error("Database connection failed: ", err.stack);
-    return;
+  connectTimeout: 20000, // 20 seconds
+  ssl: {
+    rejectUnauthorized: true
   }
-  console.log("Database connected");
 });
+pool.getConnection()
+  .then(connection => {
+    console.log("✅ Database connected");
+    connection.release();
+  })
+  .catch(error => {
+    console.error("❌ Database connection failed:", error);
+  });
 
-module.exports = db;
+module.exports = pool;

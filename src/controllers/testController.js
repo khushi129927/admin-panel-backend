@@ -49,12 +49,19 @@ exports.uploadTestQuestions = async (req, res) => {
       created_at
     ) VALUES ?`;
 
-    await db.query(sql, [entries]);
+    try {
+      await db.query(sql, [entries]);
+    } catch (dbError) {
+      console.error("❌ Database Error:", dbError.message);
+      console.error(dbError.stack);
+      return res.status(500).json({ error: "Database Error", details: dbError.message });
+    }
 
     res.status(201).json({ success: true, message: `${entries.length} questions uploaded successfully` });
   } catch (error) {
     console.error("❌ Upload Error:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error(error.stack);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };
 
@@ -65,6 +72,7 @@ exports.getTests = async (req, res) => {
     res.status(200).json({ success: true, data: results });
   } catch (error) {
     console.error("❌ Get Tests Error:", error.message);
+    console.error(error.stack);
     res.status(500).json({ error: "Failed to get test questions." });
   }
 };

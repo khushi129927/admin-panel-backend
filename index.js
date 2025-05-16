@@ -14,45 +14,57 @@ const subscriptionRoutes = require("./src/routes/subscriptionRoute");
 const app = express();
 app.use(express.json());
 
-// Set up CORS with specific origin
+// ✅ Secure CORS Configuration
+const allowedOrigins = [
+  "https://admin-panel-frontend.up.railway.app", // React Frontend on Railway
+  "http://localhost:3000"                        // Local Development (React)
+];
+
 app.use(cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    credentials: true,
-    allowedHeaders: ["Content-Type", "Authorization"]
-  }));
-  
-// Routes
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("CORS Not Allowed"));
+    }
+  },
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  credentials: true,
+  allowedHeaders: ["Content-Type", "Authorization"]
+}));
+
+// ✅ Routes
 app.use("/api/users", userRoutes);
 app.use("/api/task", taskRoutes);
 app.use("/api/test", testRoutes);
 app.use("/api/subscriptions", subscriptionRoutes);
 
-// Error Handling Middleware (at the end)
+// ✅ Error Handling Middleware (at the end)
 app.use((err, req, res, next) => {
   console.error("ERROR: ", err.stack);
   res.status(500).json({ error: "Internal Server Error", details: err.message });
 });
 
-
+// ✅ Test Database Connection Endpoint
 app.get("/api/test-db", async (req, res) => {
-    try {
-        const [rows] = await db.query("SHOW TABLES");
-        res.status(200).json(rows);
-    } catch (error) {
-        res.status(500).json({ error: error.message });
-    }
+  try {
+    const [rows] = await db.query("SHOW TABLES");
+    res.status(200).json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
+// ✅ Root Route
 app.get("/", (req, res) => {
-    res.send("Welcome to the Admin Panel Backend API");
-  });
+  res.send("Welcome to the Admin Panel Backend API");
+});
 
-// Start the server
+// ✅ Start the Server
 const PORT = process.env.PORT || 8080;
 const server = app.listen(PORT, () => {
   console.log(`✅ Server running on http://localhost:${PORT}`);
 });
 
-// Increase server timeout to 5 minutes
+// ✅ Increase server timeout to 5 minutes
 server.setTimeout(300000); // 5 minutes

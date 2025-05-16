@@ -16,7 +16,7 @@ app.use(express.json());
 
 // Set up CORS with specific origin
 app.use(cors({
-    origin: "https://bright-profiterole-c0d6ce.netlify.app/",
+    origin: "*",
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true,
     allowedHeaders: ["Content-Type", "Authorization"]

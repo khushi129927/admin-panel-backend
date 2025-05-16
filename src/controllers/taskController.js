@@ -1,71 +1,92 @@
+// 📁 src/controllers/taskController.js
 const db = require("../config/db");
 const xlsx = require("xlsx");
 const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
+
+// ✅ Multer Configuration (File Upload)
 const storage = multer.memoryStorage();
 const upload = multer({ storage }).single("file");
 
 // 📁 Upload Excel & Insert MCQs (Optimized with async/await)
 exports.uploadTask = async (req, res) => {
   try {
-    upload(req, res, async (err) => {
-      if (err) return res.status(400).json({ error: err.message });
-      if (!req.file) return res.status(400).json({ error: "No file uploaded" });
+    // ✅ Multer File Upload (Async)
+    await new Promise((resolve, reject) => {
+      upload(req, res, (err) => {
+        if (err) reject(err);
+        else resolve();
+      });
+    });
 
-      const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
-      const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rawData = xlsx.utils.sheet_to_json(sheet);
+    // ✅ Validate File Existence
+    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
-      if (!rawData.length) return res.status(400).json({ error: "No valid entries found in sheet" });
+    // ✅ Read Excel File
+    const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
+    const sheet = workbook.Sheets[workbook.SheetNames[0]];
+    const rawData = xlsx.utils.sheet_to_json(sheet);
 
-      const entries = rawData.map((row) => ([
-        uuidv4(),
-        row["MCQ 1"] || "",
-        row["MCQ 2"] || "",
-        row["MCQ 3"] || "",
-        row["MCQ 1 Option 1"] || "",
-        row["MCQ 1 Option 2"] || "",
-        row["MCQ 1 Option 3"] || "",
-        row["MCQ 1 Option 4"] || "",
-        row["MCQ 2 Option 1"] || "",
-        row["MCQ 2 Option 2"] || "",
-        row["MCQ 2 Option 3"] || "",
-        row["MCQ 2 Option 4"] || "",
-        row["MCQ 3 Option 1"] || "",
-        row["MCQ 3 Option 2"] || "",
-        row["MCQ 3 Option 3"] || "",
-        row["MCQ 3 Option 4"] || "",
-        row["Week"] || "",
-        row["Task OWNER"] || "",
-        row["TASK"] || "",
-        new Date()
-      ]));
+    if (!rawData.length) {
+      return res.status(400).json({ error: "No valid entries found in sheet" });
+    }
 
-      const sql = 
-        INSERT INTO task (
-          id, mcq1, mcq2, mcq3,
-          mcq1_opt1, mcq1_opt2, mcq1_opt3, mcq1_opt4,
-          mcq2_opt1, mcq2_opt2, mcq2_opt3, mcq2_opt4,
-          mcq3_opt1, mcq3_opt2, mcq3_opt3, mcq3_opt4,
-          week, task_owner, task, created_at
-        ) VALUES ?;
+    // ✅ Prepare Entries for Bulk Insertion
+    const entries = rawData.map((row) => ([
+      uuidv4(),
+      row["MCQ 1"] || "",
+      row["MCQ 2"] || "",
+      row["MCQ 3"] || "",
+      row["MCQ 1 Option 1"] || "",
+      row["MCQ 1 Option 2"] || "",
+      row["MCQ 1 Option 3"] || "",
+      row["MCQ 1 Option 4"] || "",
+      row["MCQ 2 Option 1"] || "",
+      row["MCQ 2 Option 2"] || "",
+      row["MCQ 2 Option 3"] || "",
+      row["MCQ 2 Option 4"] || "",
+      row["MCQ 3 Option 1"] || "",
+      row["MCQ 3 Option 2"] || "",
+      row["MCQ 3 Option 3"] || "",
+      row["MCQ 3 Option 4"] || "",
+      row["Week"] || "",
+      row["Task OWNER"] || row["Task Owner"] || "",
+      row["TASK"] || "",
+      new Date()
+    ]));
 
-      await db.execute(sql, [entries]);
-      res.status(201).json({ success: true, message: ${entries.length} entries uploaded successfully });
+    // ✅ Bulk Insert (Efficient)
+    const sql = `
+      INSERT INTO task (
+        id, mcq1, mcq2, mcq3,
+        mcq1_opt1, mcq1_opt2, mcq1_opt3, mcq1_opt4,
+        mcq2_opt1, mcq2_opt2, mcq2_opt3, mcq2_opt4,
+        mcq3_opt1, mcq3_opt2, mcq3_opt3, mcq3_opt4,
+        week, task_owner, task, created_at
+      ) VALUES ?`;
+
+    // ✅ Execute Bulk Insert
+    await db.execute(sql, [entries]);
+
+    // ✅ Success Response
+    res.status(201).json({
+      success: true,
+      message: `${entries.length} entries uploaded successfully`
     });
   } catch (error) {
-    console.error("❌ Upload Error:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("❌ Upload Error:", error);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };
 
 // 📤 Get All Tasks (Async/Await)
 exports.getTask = async (req, res) => {
   try {
-    const [results] = await db.execute(SELECT * FROM task ORDER BY created_at DESC);
+    // ✅ Optimized Query with Error Logging
+    const [results] = await db.execute(`SELECT * FROM task ORDER BY created_at DESC`);
     res.status(200).json({ success: true, data: results });
   } catch (error) {
-    console.error("❌ Get Tasks Error:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    console.error("❌ Get Tasks Error:", error);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };

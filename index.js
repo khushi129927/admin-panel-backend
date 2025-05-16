@@ -15,16 +15,21 @@ const app = express();
 app.use(express.json());
 
 // ✅ Secure CORS Configuration
-const allowedOrigins = [
-  "https://admin-panel-frontend.up.railway.app", // React Frontend on Railway
-  "http://localhost:3000"                        // Local Development (React)
-];
-
+// ✅ Optimized and Secure CORS Configuration
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
+    const allowedOrigins = [
+      "https://admin-panel-frontend-production.up.railway.app",
+      "http://localhost:3000"
+    ];
+    if (!origin) {
+      // ✅ Allow requests without origin (like API clients or direct requests)
+      callback(null, true);
+    } else if (allowedOrigins.includes(origin)) {
+      // ✅ Allow specified origins
       callback(null, true);
     } else {
+      console.error("🚫 CORS Error: Blocked origin =>", origin);
       callback(new Error("CORS Not Allowed"));
     }
   },
@@ -32,6 +37,7 @@ app.use(cors({
   credentials: true,
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
 
 // ✅ Routes
 app.use("/api/users", userRoutes);

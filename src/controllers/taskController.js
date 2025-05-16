@@ -3,11 +3,11 @@ const db = require("../config/db");
 const xlsx = require("xlsx");
 const { v4: uuidv4 } = require("uuid");
 
-// ✅ Upload Excel & Insert MCQs (Optimized with async/await)
+// ✅ Enhanced Upload Task with Error Logs
 exports.uploadTask = async (req, res) => {
   try {
-    // ✅ Check if file exists
     if (!req.file) {
+      console.error("❌ No file uploaded");
       return res.status(400).json({ error: "No file uploaded" });
     }
 
@@ -17,6 +17,7 @@ exports.uploadTask = async (req, res) => {
     const rawData = xlsx.utils.sheet_to_json(sheet);
 
     if (!rawData.length) {
+      console.error("❌ No valid entries in the Excel file");
       return res.status(400).json({ error: "No valid entries found in sheet" });
     }
 
@@ -44,7 +45,9 @@ exports.uploadTask = async (req, res) => {
       new Date()
     ]));
 
-    // ✅ Database Query (Error Handling)
+    console.log("✅ Entries Prepared:", entries.length);
+
+    // ✅ Database Query (Error Logging)
     const sql = `
       INSERT INTO task (
         id, mcq1, mcq2, mcq3,
@@ -55,9 +58,10 @@ exports.uploadTask = async (req, res) => {
       ) VALUES ?`;
 
     await db.execute(sql, [entries]);
+    console.log("✅ Data Inserted Successfully");
     res.status(201).json({ success: true, message: `${entries.length} entries uploaded successfully` });
   } catch (error) {
-    console.error("❌ Upload Error:", error.message);
+    console.error("❌ Upload Error:", error.message, error.stack);
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };

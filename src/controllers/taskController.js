@@ -4,22 +4,29 @@ const xlsx = require("xlsx");
 const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
 
-// ✅ Multer Configuration (File Upload)
+// ✅ Multer Configuration (Secure & Scalable)
 const storage = multer.memoryStorage();
-const upload = multer({ storage }).single("file");
+const upload = multer({
+  storage: storage,
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 MB Limit (Adjustable)
+  fileFilter: (req, file, cb) => {
+    // ✅ Allow only Excel files (.xlsx, .xls)
+    if (!file.mimetype.includes("spreadsheetml") && !file.mimetype.includes("excel")) {
+      return cb(new Error("Only Excel files are allowed"), false);
+    }
+    cb(null, true);
+  }
+}).single("file");
 
-// 📁 Upload Excel & Insert MCQs (Optimized with async/await)
+// 📁 Upload Excel & Insert MCQs (Optimized)
 exports.uploadTask = async (req, res) => {
   try {
-    // ✅ Multer File Upload (Async)
+    // ✅ Promisified Multer Upload
     await new Promise((resolve, reject) => {
-      upload(req, res, (err) => {
-        if (err) reject(err);
-        else resolve();
-      });
+      upload(req, res, (err) => (err ? reject(err) : resolve()));
     });
 
-    // ✅ Validate File Existence
+    // ✅ Validate File
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
     // ✅ Read Excel File
@@ -55,7 +62,7 @@ exports.uploadTask = async (req, res) => {
       new Date()
     ]));
 
-    // ✅ Bulk Insert (Efficient)
+    // ✅ Bulk Insert Query (Fast)
     const sql = `
       INSERT INTO task (
         id, mcq1, mcq2, mcq3,
@@ -74,19 +81,18 @@ exports.uploadTask = async (req, res) => {
       message: `${entries.length} entries uploaded successfully`
     });
   } catch (error) {
-    console.error("❌ Upload Error:", error);
+    console.error("❌ Upload Error:", error.message);
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };
 
-// 📤 Get All Tasks (Async/Await)
+// 📤 Get All Tasks (Optimized)
 exports.getTask = async (req, res) => {
   try {
-    // ✅ Optimized Query with Error Logging
-    const [results] = await db.execute(`SELECT * FROM task ORDER BY created_at DESC`);
+    const [results] = await db.execute("SELECT * FROM task ORDER BY created_at DESC");
     res.status(200).json({ success: true, data: results });
   } catch (error) {
-    console.error("❌ Get Tasks Error:", error);
+    console.error("❌ Get Tasks Error:", error.message);
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };

@@ -14,12 +14,10 @@ const subscriptionRoutes = require("./src/routes/subscriptionRoute");
 const app = express();
 app.use(express.json());
 
-// ✅ Secure CORS Configuration
-// ✅ Optimized and Secure CORS Configuration
-// ✅ Optimized CORS Configuration for File Uploads
+// ✅ Updated CORS Configuration
 const allowedOrigins = [
-  "https://admin-panel-frontend-production.up.railway.app", // Frontend on Railway
-  "http://localhost:3000"                                    // Local Development
+  "https://admin-panel-frontend-production.up.railway.app",
+  "http://localhost:3000"
 ];
 
 app.use(cors({
@@ -37,9 +35,6 @@ app.use(cors({
   exposedHeaders: ["Content-Disposition"] // For file uploads
 }));
 
-// ✅ Allow JSON and Form Data (for file upload)
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
 
 
 

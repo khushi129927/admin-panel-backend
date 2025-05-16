@@ -16,17 +16,15 @@ app.use(express.json());
 
 // ✅ Secure CORS Configuration
 // ✅ Optimized and Secure CORS Configuration
+// ✅ Optimized CORS Configuration for File Uploads
+const allowedOrigins = [
+  "https://admin-panel-frontend-production.up.railway.app", // Frontend on Railway
+  "http://localhost:3000"                                    // Local Development
+];
+
 app.use(cors({
   origin: function (origin, callback) {
-    const allowedOrigins = [
-      "https://admin-panel-frontend-production.up.railway.app",
-      "http://localhost:3000"
-    ];
-    if (!origin) {
-      // ✅ Allow requests without origin (like API clients or direct requests)
-      callback(null, true);
-    } else if (allowedOrigins.includes(origin)) {
-      // ✅ Allow specified origins
+    if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.error("🚫 CORS Error: Blocked origin =>", origin);
@@ -35,8 +33,14 @@ app.use(cors({
   },
   methods: ["GET", "POST", "PUT", "DELETE"],
   credentials: true,
-  allowedHeaders: ["Content-Type", "Authorization"]
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
+  exposedHeaders: ["Content-Disposition"] // For file uploads
 }));
+
+// ✅ Allow JSON and Form Data (for file upload)
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
 
 
 // ✅ Routes

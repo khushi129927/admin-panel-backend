@@ -16,7 +16,7 @@ app.use(express.json());
 
 // ✅ Updated CORS Configuration
 const allowedOrigins = [
-  "https://admin-panel-frontend-production.up.railway.app",
+  "https://admin-panel-frontend.netlify.app",
   "http://localhost:3000"
 ];
 

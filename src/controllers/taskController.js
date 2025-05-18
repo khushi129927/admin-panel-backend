@@ -5,8 +5,12 @@ const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
 
 // ⚡ Multer Configuration for Memory Storage
+const multer = require("multer");
 const storage = multer.memoryStorage();
-const upload = multer({ storage }).single("file");
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10 MB file size limit
+}).single("file");
 
 // 📤 Upload Excel & Insert MCQs
 exports.uploadTask = (req, res) => {

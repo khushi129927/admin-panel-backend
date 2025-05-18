@@ -1,61 +1,30 @@
 // 📁 controllers/taskController.js
 const db = require("../config/db");
 const xlsx = require("xlsx");
-const { v4: uuidv4 } = require("uuid");
 const multer = require("multer");
+const { v4: uuidv4 } = require("uuid");
 
-// ⚡ Multer Configuration (Memory Storage, 10 MB Limit)
 const storage = multer.memoryStorage();
-const upload = multer({
-  storage,
-  limits: { fileSize: 10 * 1024 * 1024 } // 10 MB file size limit
-}).single("file");
+const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }).single("file");
 
 // 📤 Upload Excel & Insert MCQs
 exports.uploadTask = (req, res) => {
   upload(req, res, async (err) => {
-    if (err instanceof multer.MulterError) {
-      return res.status(400).json({ error: `File upload error: ${err.message}` });
-    } else if (err) {
-      return res.status(500).json({ error: `Unexpected error: ${err.message}` });
-    }
+    if (err) return res.status(400).json({ error: `File upload error: ${err.message}` });
 
-    if (!req.file) {
-      return res.status(400).json({ error: "No file uploaded. Please upload a valid Excel file." });
-    }
+    if (!req.file) return res.status(400).json({ error: "No file uploaded." });
 
     try {
       const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
       const rawData = xlsx.utils.sheet_to_json(sheet);
 
-      const entries = rawData.map((row) => ([
-        uuidv4(), row["MCQ 1"] || "", row["MCQ 2"] || "", row["MCQ 3"] || "",
-        row["MCQ 1 Option 1"] || "", row["MCQ 1 Option 2"] || "", row["MCQ 1 Option 3"] || "", row["MCQ 1 Option 4"] || "",
-        row["MCQ 2 Option 1"] || "", row["MCQ 2 Option 2"] || "", row["MCQ 2 Option 3"] || "", row["MCQ 2 Option 4"] || "",
-        row["MCQ 3 Option 1"] || "", row["MCQ 3 Option 2"] || "", row["MCQ 3 Option 3"] || "", row["MCQ 3 Option 4"] || "",
-        row["Week"] || "", row["Task OWNER"] || "", row["TASK"] || "", new Date()
-      ]));
+      const entries = rawData.map((row) => ([uuidv4(), row["Task OWNER"], row["TASK"], row["Week"]]));
+      if (!entries.length) return res.status(400).json({ error: "No valid entries found." });
 
-      if (!entries.length) {
-        return res.status(400).json({ error: "No valid entries found in the sheet." });
-      }
-
-      // ✅ Secure SQL Bulk Insert
-      const sql = `
-        INSERT INTO task (
-          id, mcq1, mcq2, mcq3,
-          mcq1_opt1, mcq1_opt2, mcq1_opt3, mcq1_opt4,
-          mcq2_opt1, mcq2_opt2, mcq2_opt3, mcq2_opt4,
-          mcq3_opt1, mcq3_opt2, mcq3_opt3, mcq3_opt4,
-          week, task_owner, task, created_at
-        ) VALUES ?
-      `;
-
-      await db.query(sql, [entries]);
+      await db.query("INSERT INTO task (id, task_owner, task, week) VALUES ?", [entries]);
       res.status(201).json({ success: true, message: `${entries.length} entries uploaded successfully.` });
     } catch (error) {
-      console.error("❌ Upload Error:", error);
       res.status(500).json({ error: "Internal server error." });
     }
   });
@@ -66,8 +35,7 @@ exports.getTask = async (req, res) => {
   try {
     const [results] = await db.query("SELECT * FROM task ORDER BY created_at DESC");
     res.status(200).json({ success: true, data: results });
-  } catch (error) {
-    console.error("❌ Fetch Error:", error);
-    res.status(500).json({ error: "Internal server error." });
+  } catch {
+    res.status(500).json({ error: "Failed to load tasks." });
   }
 };

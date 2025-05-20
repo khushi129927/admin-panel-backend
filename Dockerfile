@@ -1,43 +1,38 @@
 # ====== STAGE 1: Build React Frontend ======
 FROM node:18-alpine AS frontend
 
-# Set base working directory
-WORKDIR /app
-
-# ✅ Fix: Copy frontend package files correctly
-COPY admin-panel-frontend/package*.json ./admin-panel-frontend/
-
-# Move into frontend dir
 WORKDIR /app/admin-panel-frontend
 
-# Install dependencies
+# ✅ Copy ONLY frontend package.json files FIRST
+COPY admin-panel-frontend/package*.json ./
+
+# ✅ Install dependencies
 RUN npm install
 
-# Copy rest of frontend code
+# ✅ Now copy the rest of the frontend project
 COPY admin-panel-frontend/ ./
 
-# Build production React app
+# ✅ Build the React app
 RUN npm run build
 
 
 # ====== STAGE 2: Setup Backend (Node + Serve React) ======
 FROM node:18-alpine
 
-# Set backend working directory
 WORKDIR /app
 
-# Copy backend dependencies
+# ✅ Copy backend package files and install
 COPY package*.json ./
 RUN npm install
 
-# Copy backend source code
+# ✅ Copy entire backend project
 COPY . ./
 
-# ✅ Copy built frontend into backend folder
+# ✅ Copy React build from frontend stage
 COPY --from=frontend /app/admin-panel-frontend/build ./admin-panel-frontend/build
 
-# Port to expose
+# ✅ Expose backend port
 EXPOSE 8080
 
-# Start backend server
+# ✅ Run Express server
 CMD ["node", "index.js"]

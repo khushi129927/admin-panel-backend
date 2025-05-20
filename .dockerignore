@@ -1,8 +1,0 @@
-node_modules
-admin-panel-frontend/node_modules
-.env
-.env.local
-.git
-.vscode
-Dockerfile
-*.log

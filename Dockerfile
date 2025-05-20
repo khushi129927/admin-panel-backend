@@ -1,15 +1,16 @@
 # ====== STAGE 1: Build React Frontend ======
 FROM node:18-alpine AS frontend
 
-WORKDIR /app/admin-panel-frontend
+# 👇 Start inside /app
+WORKDIR /app
 
-# ✅ Copy ONLY frontend package.json files FIRST
+# ✅ Copy ONLY the frontend package.json files into /app
 COPY admin-panel-frontend/package*.json ./
 
-# ✅ Install dependencies
+# ✅ Install deps BEFORE copying rest for cache efficiency
 RUN npm install
 
-# ✅ Now copy the rest of the frontend project
+# ✅ Now copy full frontend source into /app
 COPY admin-panel-frontend/ ./
 
 # ✅ Build the React app
@@ -21,18 +22,18 @@ FROM node:18-alpine
 
 WORKDIR /app
 
-# ✅ Copy backend package files and install
+# ✅ Backend package files + install
 COPY package*.json ./
 RUN npm install
 
-# ✅ Copy entire backend project
+# ✅ Copy backend code
 COPY . ./
 
-# ✅ Copy React build from frontend stage
-COPY --from=frontend /app/admin-panel-frontend/build ./admin-panel-frontend/build
+# ✅ Copy built React app from stage 1
+COPY --from=frontend /app/build ./admin-panel-frontend/build
 
 # ✅ Expose backend port
 EXPOSE 8080
 
-# ✅ Run Express server
+# ✅ Start Express server
 CMD ["node", "index.js"]

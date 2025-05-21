@@ -1,22 +1,54 @@
 const db = require("../config/db");
 
-// Create User Table (if not exists)
-const createUserTable = async () => {
-  const createTableQuery = `
-    CREATE TABLE IF NOT EXISTS users (
-      id VARCHAR(36) PRIMARY KEY,
-      name VARCHAR(255) NOT NULL,
-      dob DATE,
-      email VARCHAR(255) UNIQUE NOT NULL,
-      password VARCHAR(255) NOT NULL
-    )`;
-
+const initTables = async () => {
   try {
-    await db.query(createTableQuery);
-    console.log("✅ Users table created or already exists.");
+    // USERS (Base Table)
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id VARCHAR(36) PRIMARY KEY,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password VARCHAR(255)
+      );
+    `);
+    console.log("✅ Users table created");
+
+    // PARENTS TABLE
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS parents (
+        id VARCHAR(36) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        dob DATE,
+        gender VARCHAR(10),
+        education VARCHAR(255),
+        profession VARCHAR(255),
+        hobbies TEXT,
+        favourite_food VARCHAR(255),
+        FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
+      );
+    `);
+    console.log("✅ Parents table created");
+
+    // CHILDREN TABLE
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS children (
+        id VARCHAR(36) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        dob DATE,
+        gender VARCHAR(10),
+        school VARCHAR(255),
+        grades VARCHAR(50),
+        hobbies TEXT,
+        dream_career VARCHAR(255),
+        favourite_sports VARCHAR(255),
+        blood_group VARCHAR(10),
+        FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
+      );
+    `);
+    console.log("✅ Children table created");
+
   } catch (err) {
-    console.error("❌ Error creating Users table:", err.message);
+    console.error("❌ Table creation error:", err.message);
   }
 };
 
-createUserTable();
+initTables();

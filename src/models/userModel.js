@@ -1,22 +1,20 @@
 const db = require("../config/db");
 
-const initTables = async () => {
+const initUserInheritance = async () => {
   try {
-    // USERS (Base Table)
     await db.query(`
       CREATE TABLE IF NOT EXISTS users (
         id VARCHAR(36) PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
-        password VARCHAR(255)
+        password VARCHAR(255) NOT NULL,
+        type ENUM('parent', 'child') NOT NULL
       );
     `);
-    console.log("✅ Users table created");
 
-    // PARENTS TABLE
     await db.query(`
       CREATE TABLE IF NOT EXISTS parents (
         id VARCHAR(36) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
+        name VARCHAR(255),
         dob DATE,
         gender VARCHAR(10),
         education VARCHAR(255),
@@ -26,13 +24,11 @@ const initTables = async () => {
         FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
       );
     `);
-    console.log("✅ Parents table created");
 
-    // CHILDREN TABLE
     await db.query(`
       CREATE TABLE IF NOT EXISTS children (
         id VARCHAR(36) PRIMARY KEY,
-        name VARCHAR(255) NOT NULL,
+        name VARCHAR(255),
         dob DATE,
         gender VARCHAR(10),
         school VARCHAR(255),
@@ -44,11 +40,11 @@ const initTables = async () => {
         FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
       );
     `);
-    console.log("✅ Children table created");
 
+    console.log("✅ All tables initialized");
   } catch (err) {
-    console.error("❌ Table creation error:", err.message);
+    console.error("❌ Table Init Error:", err.message);
   }
 };
 
-initTables();
+initUserInheritance();

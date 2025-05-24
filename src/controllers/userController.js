@@ -60,8 +60,8 @@ exports.createParent = async (req, res) => {
     const id = uuidv4();
     await db.execute("INSERT INTO users (id, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
       [id, name, dob, email, hashed]);
-    await db.execute("INSERT INTO parents (id, gender, education, profession, hobbies, favourite_food) VALUES (?, ?, ?, ?, ?, ?)",
-      [id, gender, education, profession, hobbies, favourite_food]);
+    await db.execute("INSERT INTO parents (id, name, gender, education, profession, hobbies, favourite_food) VALUES (?, ?, ?, ?, ?, ?)",
+      [id, name, gender, education, profession, hobbies, favourite_food]);
     res.status(201).json({ success: true, id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -76,8 +76,8 @@ exports.createChild = async (req, res) => {
     const id = uuidv4();
     await db.execute("INSERT INTO users (id, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
       [id, name, dob, email, hashed]);
-    await db.execute("INSERT INTO children (id, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [id, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId]);
+    await db.execute("INSERT INTO children (id, name, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [id, name, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId]);
     res.status(201).json({ success: true, id });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -89,8 +89,8 @@ exports.updateParent = async (req, res) => {
   const { name, dob, email, gender, education, profession, hobbies, fav_food } = req.body;
   try {
     await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE id=?", [name, dob, email, req.params.id]);
-    await db.execute("UPDATE parents SET gender=?, education=?, profession=?, hobbies=?, favourite_food=? WHERE id=?",
-      [gender, education, profession, hobbies, fav_food, req.params.id]);
+    await db.execute("UPDATE parents SET name=?, gender=?, education=?, profession=?, hobbies=?, favourite_food=? WHERE id=?",
+      [name, gender, education, profession, hobbies, fav_food, req.params.id]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -102,8 +102,8 @@ exports.updateChild = async (req, res) => {
   const { name, dob, email, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group } = req.body;
   try {
     await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE id=?", [name, dob, email, req.params.id]);
-    await db.execute("UPDATE children SET gender=?, school=?, grades=?, hobbies=?, dream_career=?, favourite_sports=?, blood_group=? WHERE id=?",
-      [gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, req.params.id]);
+    await db.execute("UPDATE children SET name=?, gender=?, school=?, grades=?, hobbies=?, dream_career=?, favourite_sports=?, blood_group=? WHERE id=?",
+      [name, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, req.params.id]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });

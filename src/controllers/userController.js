@@ -60,7 +60,7 @@ exports.createParent = async (req, res) => {
     const id = uuidv4();
     await db.execute("INSERT INTO users (id, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
       [id, name, dob, email, hashed]);
-    await db.execute("INSERT INTO parents (userId, gender, education, profession, hobbies, fav_food) VALUES (?, ?, ?, ?, ?, ?)",
+    await db.execute("INSERT INTO parents (id, gender, education, profession, hobbies, fav_food) VALUES (?, ?, ?, ?, ?, ?)",
       [id, gender, education, profession, hobbies, fav_food]);
     res.status(201).json({ success: true, id });
   } catch (error) {
@@ -76,7 +76,7 @@ exports.createChild = async (req, res) => {
     const id = uuidv4();
     await db.execute("INSERT INTO users (id, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
       [id, name, dob, email, hashed]);
-    await db.execute("INSERT INTO children (userId, gender, school, grades, hobbies, dream_career, fav_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    await db.execute("INSERT INTO children (id, gender, school, grades, hobbies, dream_career, fav_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [id, gender, school, grades, hobbies, dream_career, fav_sports, blood_group, parentId]);
     res.status(201).json({ success: true, id });
   } catch (error) {
@@ -89,7 +89,7 @@ exports.updateParent = async (req, res) => {
   const { name, dob, email, gender, education, profession, hobbies, fav_food } = req.body;
   try {
     await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE id=?", [name, dob, email, req.params.id]);
-    await db.execute("UPDATE parents SET gender=?, education=?, profession=?, hobbies=?, fav_food=? WHERE userId=?",
+    await db.execute("UPDATE parents SET gender=?, education=?, profession=?, hobbies=?, fav_food=? WHERE id=?",
       [gender, education, profession, hobbies, fav_food, req.params.id]);
     res.json({ success: true });
   } catch (error) {
@@ -102,7 +102,7 @@ exports.updateChild = async (req, res) => {
   const { name, dob, email, gender, school, grades, hobbies, dream_career, fav_sports, blood_group } = req.body;
   try {
     await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE id=?", [name, dob, email, req.params.id]);
-    await db.execute("UPDATE children SET gender=?, school=?, grades=?, hobbies=?, dream_career=?, fav_sports=?, blood_group=? WHERE userId=?",
+    await db.execute("UPDATE children SET gender=?, school=?, grades=?, hobbies=?, dream_career=?, fav_sports=?, blood_group=? WHERE id=?",
       [gender, school, grades, hobbies, dream_career, fav_sports, blood_group, req.params.id]);
     res.json({ success: true });
   } catch (error) {
@@ -123,7 +123,7 @@ exports.getChildren = async (req, res) => {
 // 📍 Get Location
 exports.getLocation = async (req, res) => {
   try {
-    const [loc] = await db.execute("SELECT * FROM locations WHERE userId = ?", [req.params.id]);
+    const [loc] = await db.execute("SELECT * FROM locations WHERE id = ?", [req.params.id]);
     res.json({ success: true, location: loc[0] || {} });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -135,7 +135,7 @@ exports.updateLocation = async (req, res) => {
   const { city, state, country, latitude, longitude } = req.body;
   try {
     await db.execute(`
-      INSERT INTO locations (userId, city, state, country, latitude, longitude)
+      INSERT INTO locations (id, city, state, country, latitude, longitude)
       VALUES (?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE city=?, state=?, country=?, latitude=?, longitude=?`,
       [req.params.id, city, state, country, latitude, longitude, city, state, country, latitude, longitude]);
@@ -151,12 +151,12 @@ exports.getUsers = async (req, res) => {
     const [parents] = await db.execute(`
       SELECT u.id, u.name, u.email, u.dob, 'parent' AS role,
       p.gender, p.education, p.profession FROM users u
-      JOIN parent_users p ON u.id = p.userId`);
+      JOIN parents p ON u.id = p.id`);
 
     const [children] = await db.execute(`
       SELECT u.id, u.name, u.email, u.dob, 'child' AS role,
       c.school, c.grades, c.blood_group FROM users u
-      JOIN child_users c ON u.id = c.userId`);
+      JOIN children c ON u.id = c.id`);
 
     res.json({ success: true, data: [...parents, ...children] });
   } catch (error) {

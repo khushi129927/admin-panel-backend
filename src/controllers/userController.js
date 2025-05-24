@@ -60,7 +60,7 @@ exports.createParent = async (req, res) => {
     const id = uuidv4();
     await db.execute("INSERT INTO users (id, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
       [id, name, dob, email, hashed]);
-    await db.execute("INSERT INTO parent_users (userId, gender, education, profession, hobbies, fav_food) VALUES (?, ?, ?, ?, ?, ?)",
+    await db.execute("INSERT INTO parents (userId, gender, education, profession, hobbies, fav_food) VALUES (?, ?, ?, ?, ?, ?)",
       [id, gender, education, profession, hobbies, fav_food]);
     res.status(201).json({ success: true, id });
   } catch (error) {
@@ -76,7 +76,7 @@ exports.createChild = async (req, res) => {
     const id = uuidv4();
     await db.execute("INSERT INTO users (id, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
       [id, name, dob, email, hashed]);
-    await db.execute("INSERT INTO child_users (userId, gender, school, grades, hobbies, dream_career, fav_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    await db.execute("INSERT INTO children (userId, gender, school, grades, hobbies, dream_career, fav_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [id, gender, school, grades, hobbies, dream_career, fav_sports, blood_group, parentId]);
     res.status(201).json({ success: true, id });
   } catch (error) {
@@ -89,7 +89,7 @@ exports.updateParent = async (req, res) => {
   const { name, dob, email, gender, education, profession, hobbies, fav_food } = req.body;
   try {
     await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE id=?", [name, dob, email, req.params.id]);
-    await db.execute("UPDATE parent_users SET gender=?, education=?, profession=?, hobbies=?, fav_food=? WHERE userId=?",
+    await db.execute("UPDATE parents SET gender=?, education=?, profession=?, hobbies=?, fav_food=? WHERE userId=?",
       [gender, education, profession, hobbies, fav_food, req.params.id]);
     res.json({ success: true });
   } catch (error) {
@@ -102,7 +102,7 @@ exports.updateChild = async (req, res) => {
   const { name, dob, email, gender, school, grades, hobbies, dream_career, fav_sports, blood_group } = req.body;
   try {
     await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE id=?", [name, dob, email, req.params.id]);
-    await db.execute("UPDATE child_users SET gender=?, school=?, grades=?, hobbies=?, dream_career=?, fav_sports=?, blood_group=? WHERE userId=?",
+    await db.execute("UPDATE children SET gender=?, school=?, grades=?, hobbies=?, dream_career=?, fav_sports=?, blood_group=? WHERE userId=?",
       [gender, school, grades, hobbies, dream_career, fav_sports, blood_group, req.params.id]);
     res.json({ success: true });
   } catch (error) {
@@ -113,7 +113,7 @@ exports.updateChild = async (req, res) => {
 // 👀 Get Children of Parent
 exports.getChildren = async (req, res) => {
   try {
-    const [children] = await db.execute("SELECT * FROM child_users WHERE parentId = ?", [req.params.id]);
+    const [children] = await db.execute("SELECT * FROM children WHERE parentId = ?", [req.params.id]);
     res.json({ success: true, children });
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -46,3 +46,70 @@ exports.getTask = async (req, res) => {
     res.status(500).json({ error: "Failed to load tasks." });
   }
 };
+
+// 📦 Get Task by ID
+exports.getTaskById = async (req, res) => {
+  try {
+    const [task] = await db.query("SELECT * FROM task WHERE id = ?", [req.params.id]);
+    if (!task.length) return res.status(404).json({ error: "Task not found." });
+    res.json({ success: true, task: task[0] });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to fetch task." });
+  }
+};
+
+// 🎯 Assign Task to User
+exports.assignTaskToUser = async (req, res) => {
+  const { taskId, userId, assignedBy } = req.body;
+  try {
+    const id = uuidv4();
+    await db.execute(
+      "INSERT INTO task_assignments (id, taskId, userId, assignedBy, status, assigned_at) VALUES (?, ?, ?, ?, 'assigned', NOW())",
+      [id, taskId, userId, assignedBy]
+    );
+    res.status(201).json({ success: true, id });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to assign task." });
+  }
+};
+
+// 🔄 Update Task Status
+exports.updateTaskStatus = async (req, res) => {
+  const { status } = req.body;
+  try {
+    await db.execute("UPDATE task_assignments SET status = ? WHERE id = ?", [status, req.params.id]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to update task status." });
+  }
+};
+
+// 🧠 Weekly Tasks for User
+exports.getWeeklyTasksForUser = async (req, res) => {
+  try {
+    const [rows] = await db.execute(`
+      SELECT t.*, a.status FROM task t
+      JOIN task_assignments a ON t.id = a.taskId
+      WHERE a.userId = ? AND WEEK(t.created_at) = WEEK(NOW())
+    `, [req.params.userId]);
+    res.json({ success: true, tasks: rows });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to load weekly tasks." });
+  }
+};
+
+// 💬 Submit Task Feedback
+exports.submitFeedback = async (req, res) => {
+  const { taskId, userId, feedback, rating } = req.body;
+  try {
+    const id = uuidv4();
+    await db.execute(
+      `INSERT INTO task_feedback (id, taskId, userId, feedback, rating, created_at)
+       VALUES (?, ?, ?, ?, ?, NOW())`,
+      [id, taskId, userId, feedback, rating]
+    );
+    res.status(201).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to submit feedback." });
+  }
+};

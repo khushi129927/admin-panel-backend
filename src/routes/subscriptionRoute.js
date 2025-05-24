@@ -1,8 +1,14 @@
 const express = require("express");
-const { createSubscription, getSubscriptions } = require("../controllers/subscriptionController");
 const router = express.Router();
+const {createSubscription,getSubscription,getSubscriptions,updateSubscription,getPaymentHistory} = require("../controllers/subscriptionController");
 
-router.post("/create", createSubscription);
-router.get("/get-all", getSubscriptions);
+// Core Subscription Routes
+router.post("/create", createSubscription);               // Create
+router.get("/get-all", getSubscriptions);                  // All Subscriptions
+router.get("/:userId", getSubscription);            // Get by userId
+router.put("/update", updateSubscription);                // Update
+
+// Payment History
+router.get("/payments/:userId", getPaymentHistory); // User's Payments
 
 module.exports = router;

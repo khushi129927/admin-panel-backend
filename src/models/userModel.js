@@ -11,7 +11,19 @@ const initUserInheritance = async () => {
       );
     `);
 
-    
+    await db.query(`
+      CREATE TABLE IF NOT EXISTS parents (
+        id VARCHAR(36) PRIMARY KEY,
+        name VARCHAR(255),
+        dob DATE,
+        gender VARCHAR(10),
+        education VARCHAR(255),
+        profession VARCHAR(255),
+        hobbies TEXT,
+        favourite_food VARCHAR(255),
+        FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
+      );
+    `);
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS children (
@@ -23,7 +35,7 @@ const initUserInheritance = async () => {
         grades VARCHAR(50),
         hobbies TEXT,
         dream_career VARCHAR(255),
-        fav_sports VARCHAR(255),
+        favourite_sports VARCHAR(255),
         blood_group VARCHAR(10),
         FOREIGN KEY (id) REFERENCES users(id) ON DELETE CASCADE
       );

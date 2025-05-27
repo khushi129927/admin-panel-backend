@@ -18,6 +18,6 @@ router.get("/:id/get-location", getLocation);
 router.put("/:id/update-location", updateLocation);
 
 // 📤 All users (parent + child)
-router.get("/get-all-uaers", getUsers);
+router.get("/get-all-users", getUsers);
 
 module.exports = router;

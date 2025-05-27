@@ -23,7 +23,7 @@ exports.registerUser = async (req, res) => {
 
     const hashed = await bcrypt.hash(password, 10);
     const id = uuidv4();
-    await db.execute("INSERT INTO users (id, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
+    await db.execute("INSERT INTO users (userId, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
       [id, name, dobFormatted, email, hashed]);
 
     res.status(201).json({ success: true, message: "User registered" });
@@ -58,9 +58,9 @@ exports.createParent = async (req, res) => {
   try {
     const hashed = await bcrypt.hash(password, 10);
     const id = uuidv4();
-    await db.execute("INSERT INTO users (id, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
+    await db.execute("INSERT INTO users (userId, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
       [id, name, dob, email, hashed]);
-    await db.execute("INSERT INTO parents (id, name, dob, gender, education, profession, hobbies, favourite_food) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+    await db.execute("INSERT INTO parents (parentId, name, dob, gender, education, profession, hobbies, favourite_food) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [id, name, gender, education, profession, hobbies, favourite_food]);
     res.status(201).json({ success: true, id });
   } catch (error) {
@@ -74,9 +74,9 @@ exports.createChild = async (req, res) => {
   try {
     const hashed = await bcrypt.hash(password, 10);
     const id = uuidv4();
-    await db.execute("INSERT INTO users (id, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
+    await db.execute("INSERT INTO users (userId, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
       [id, name, dob, email, hashed]);
-    await db.execute("INSERT INTO children (id, name, dob, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    await db.execute("INSERT INTO children (childId, name, dob, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [id, name, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId]);
     res.status(201).json({ success: true, id });
   } catch (error) {
@@ -88,8 +88,8 @@ exports.createChild = async (req, res) => {
 exports.updateParent = async (req, res) => {
   const { name, dob, email, gender, education, profession, hobbies, fav_food } = req.body;
   try {
-    await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE id=?", [name, dob, email, req.params.id]);
-    await db.execute("UPDATE parents SET name=?, gender=?, education=?, profession=?, hobbies=?, favourite_food=? WHERE id=?",
+    await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE userId=?", [name, dob, email, req.params.id]);
+    await db.execute("UPDATE parents SET name=?, gender=?, education=?, profession=?, hobbies=?, favourite_food=? WHERE parentId=?",
       [name, gender, education, profession, hobbies, fav_food, req.params.id]);
     res.json({ success: true });
   } catch (error) {
@@ -101,8 +101,8 @@ exports.updateParent = async (req, res) => {
 exports.updateChild = async (req, res) => {
   const { name, dob, email, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group } = req.body;
   try {
-    await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE id=?", [name, dob, email, req.params.id]);
-    await db.execute("UPDATE children SET name=?, gender=?, school=?, grades=?, hobbies=?, dream_career=?, favourite_sports=?, blood_group=? WHERE id=?",
+    await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE userId=?", [name, dob, email, req.params.id]);
+    await db.execute("UPDATE children SET name=?, gender=?, school=?, grades=?, hobbies=?, dream_career=?, favourite_sports=?, blood_group=? WHERE childId=?",
       [name, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, req.params.id]);
     res.json({ success: true });
   } catch (error) {
@@ -123,7 +123,7 @@ exports.getChildren = async (req, res) => {
 // 📍 Get Location
 exports.getLocation = async (req, res) => {
   try {
-    const [loc] = await db.execute("SELECT * FROM locations WHERE id = ?", [req.params.id]);
+    const [loc] = await db.execute("SELECT * FROM locations WHERE userId = ?", [req.params.userId]);
     res.json({ success: true, location: loc[0] || {} });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -135,10 +135,10 @@ exports.updateLocation = async (req, res) => {
   const { city, state, country, latitude, longitude } = req.body;
   try {
     await db.execute(`
-      INSERT INTO locations (id, city, state, country, latitude, longitude)
+      INSERT INTO locations (userID, city, state, country, latitude, longitude)
       VALUES (?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE city=?, state=?, country=?, latitude=?, longitude=?`,
-      [req.params.id, city, state, country, latitude, longitude, city, state, country, latitude, longitude]);
+      [req.params.userId, city, state, country, latitude, longitude, city, state, country, latitude, longitude]);
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -151,12 +151,12 @@ exports.getUsers = async (req, res) => {
     const [parents] = await db.execute(`
       SELECT u.id, u.name, u.email, u.dob, 'parent' AS role,
       p.gender, p.education, p.profession FROM users u
-      JOIN parents p ON u.id = p.id`);
+      JOIN parents p ON u.userId = p.parentId`);
 
     const [children] = await db.execute(`
       SELECT u.id, u.name, u.email, u.dob, 'child' AS role,
       c.school, c.grades, c.blood_group FROM users u
-      JOIN children c ON u.id = c.id`);
+      JOIN children c ON u.userId = c.childId`);
 
     res.json({ success: true, data: [...parents, ...children] });
   } catch (error) {

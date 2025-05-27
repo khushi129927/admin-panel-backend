@@ -3,14 +3,14 @@ const db = require("../config/db");
 const createEqTables = async () => {
   await db.query(`
     CREATE TABLE IF NOT EXISTS eq_tests (
-      id VARCHAR(36) PRIMARY KEY,
+      epTestsId VARCHAR(36) PRIMARY KEY,
       title VARCHAR(255),
       description TEXT
     )`);
 
   await db.query(`
     CREATE TABLE IF NOT EXISTS eq_questions (
-      id VARCHAR(36) PRIMARY KEY,
+      epQuestionsId VARCHAR(36) PRIMARY KEY,
       testId VARCHAR(36),
       question TEXT,
       options JSON,
@@ -20,7 +20,7 @@ const createEqTables = async () => {
 
   await db.query(`
     CREATE TABLE IF NOT EXISTS eq_results (
-      id VARCHAR(36) PRIMARY KEY,
+      epResultsId VARCHAR(36) PRIMARY KEY,
       userId VARCHAR(36),
       testId VARCHAR(36),
       score INT,

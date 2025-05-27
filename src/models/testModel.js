@@ -3,7 +3,7 @@ const db = require("../config/db");
 const createTestTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS tests (
-      id VARCHAR(36) PRIMARY KEY,
+      testId VARCHAR(36) PRIMARY KEY,
       quarter VARCHAR(100),
       age VARCHAR(100),
       objective TEXT,

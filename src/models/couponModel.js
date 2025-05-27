@@ -4,7 +4,7 @@ const db = require("../config/db");
 const createCouponsTable = async () => {
   const sql = `
     CREATE TABLE IF NOT EXISTS coupons (
-      id VARCHAR(36) PRIMARY KEY,
+      couponsId VARCHAR(36) PRIMARY KEY,
       code VARCHAR(50) NOT NULL UNIQUE,
       discount DECIMAL(5,2) NOT NULL,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
@@ -21,7 +21,7 @@ const createCouponsTable = async () => {
 const createCouponRedemptionsTable = async () => {
   const sql = `
     CREATE TABLE IF NOT EXISTS coupon_redemptions (
-      id VARCHAR(36) PRIMARY KEY,
+      couponRedemptionsId VARCHAR(36) PRIMARY KEY,
       userId VARCHAR(36),
       couponId VARCHAR(36),
       redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,

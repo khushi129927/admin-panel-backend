@@ -60,7 +60,7 @@ exports.createParent = async (req, res) => {
     const id = uuidv4();
     await db.execute("INSERT INTO users (id, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
       [id, name, dob, email, hashed]);
-    await db.execute("INSERT INTO parents (id, name, gender, education, profession, hobbies, favourite_food) VALUES (?, ?, ?, ?, ?, ?)",
+    await db.execute("INSERT INTO parents (id, name, dob, gender, education, profession, hobbies, favourite_food) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
       [id, name, gender, education, profession, hobbies, favourite_food]);
     res.status(201).json({ success: true, id });
   } catch (error) {
@@ -76,7 +76,7 @@ exports.createChild = async (req, res) => {
     const id = uuidv4();
     await db.execute("INSERT INTO users (id, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
       [id, name, dob, email, hashed]);
-    await db.execute("INSERT INTO children (id, name, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    await db.execute("INSERT INTO children (id, name, dob, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [id, name, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId]);
     res.status(201).json({ success: true, id });
   } catch (error) {

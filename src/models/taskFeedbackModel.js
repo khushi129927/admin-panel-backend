@@ -3,7 +3,7 @@ const db = require("../config/db");
 const createFeedbackTable = async () => {
   const query = `
     CREATE TABLE IF NOT EXISTS task_feedback (
-      id VARCHAR(36) PRIMARY KEY,
+      taskFeedbackId VARCHAR(36) PRIMARY KEY,
       taskId VARCHAR(36) NOT NULL,
       userId VARCHAR(36) NOT NULL,
       rating INT,

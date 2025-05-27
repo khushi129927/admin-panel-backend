@@ -4,7 +4,7 @@ const db = require("../config/db");
 const createTaskTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS task (
-      id VARCHAR(255) PRIMARY KEY,
+      taskId VARCHAR(255) PRIMARY KEY,
       mcq1 TEXT,
       mcq2 TEXT,
       mcq3 TEXT,
@@ -36,3 +36,28 @@ const createTaskTable = async () => {
 
 // Initialize the table creation
 createTaskTable();
+
+const createTaskAssignmentTable = async () => {
+  const createTableQuery = `
+    CREATE TABLE IF NOT EXISTS task_assignment (
+      taskAssignmentId VARCHAR(36) PRIMARY KEY,
+      taskId VARCHAR(255),
+      userId VARCHAR(36),
+      status ENUM('pending', 'completed') DEFAULT 'pending',
+      feedback TEXT,
+      assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      completed_at TIMESTAMP NULL,
+      FOREIGN KEY (taskId) REFERENCES task(taskId) ON DELETE CASCADE,
+      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+    )
+  `;
+
+  try {
+    await db.query(createTableQuery);
+    console.log("✅ task_assignment table created or already exists.");
+  } catch (err) {
+    console.error("❌ Error creating task_assignment table:", err.message);
+  }
+};
+
+createTaskAssignmentTable();

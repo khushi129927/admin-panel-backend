@@ -28,7 +28,7 @@ exports.uploadTask = (req, res) => {
         row["MCQ 3 Option 1"], row["MCQ 3 Option 2"], row["MCQ 3 Option 3"], row["MCQ 3 Option 4"]
       ]));
 
-      await db.query("INSERT INTO task (id, week, task_owner, task, mcq1, mcq2, mcq3, mcq1_opt1, mcq1_opt2, mcq1_opt3, mcq1_opt4, mcq2_opt1, mcq2_opt2, mcq2_opt3, mcq2_opt4, mcq3_opt1, mcq3_opt2, mcq3_opt3, mcq3_opt4) VALUES ?", [entries]);
+      await db.query("INSERT INTO task (taskId, week, task_owner, task, mcq1, mcq2, mcq3, mcq1_opt1, mcq1_opt2, mcq1_opt3, mcq1_opt4, mcq2_opt1, mcq2_opt2, mcq2_opt3, mcq2_opt4, mcq3_opt1, mcq3_opt2, mcq3_opt3, mcq3_opt4) VALUES ?", [entries]);
       res.status(201).json({ success: true, message: `${entries.length} entries uploaded successfully.` });
     } catch (error) {
       res.status(500).json({ error: "Internal server error." });
@@ -50,7 +50,7 @@ exports.getTask = async (req, res) => {
 // 📦 Get Task by ID
 exports.getTaskById = async (req, res) => {
   try {
-    const [task] = await db.query("SELECT * FROM task WHERE id = ?", [req.params.id]);
+    const [task] = await db.query("SELECT * FROM task WHERE taskId = ?", [req.params.taskId]);
     if (!task.length) return res.status(404).json({ error: "Task not found." });
     res.json({ success: true, task: task[0] });
   } catch (err) {
@@ -77,7 +77,7 @@ exports.assignTaskToUser = async (req, res) => {
 exports.updateTaskStatus = async (req, res) => {
   const { status } = req.body;
   try {
-    await db.execute("UPDATE task_assignments SET status = ? WHERE id = ?", [status, req.params.id]);
+    await db.execute("UPDATE task_assignments SET status = ? WHERE taskId = ?", [status, req.params.taskId]);
     res.json({ success: true });
   } catch (err) {
     res.status(500).json({ error: "Failed to update task status." });
@@ -104,9 +104,9 @@ exports.submitFeedback = async (req, res) => {
   try {
     const id = uuidv4();
     await db.execute(
-      `INSERT INTO task_feedback (id, taskId, userId, feedback, rating, created_at)
+      `INSERT INTO task_feedback (taskFeedbackId, taskId, userId, feedback, rating, created_at)
        VALUES (?, ?, ?, ?, ?, NOW())`,
-      [id, taskId, userId, feedback, rating]
+      [taskFeedbackId, taskId, userId, feedback, rating]
     );
     res.status(201).json({ success: true });
   } catch (err) {

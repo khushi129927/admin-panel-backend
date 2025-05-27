@@ -4,7 +4,7 @@ const initUserInheritance = async () => {
   try {
     await db.query(`
       CREATE TABLE IF NOT EXISTS users (
-        id VARCHAR(36) PRIMARY KEY,
+        userId VARCHAR(36) PRIMARY KEY,
         email VARCHAR(255) UNIQUE NOT NULL,
         password VARCHAR(255) NOT NULL,
         type ENUM('parent', 'child') NOT NULL
@@ -13,7 +13,7 @@ const initUserInheritance = async () => {
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS parents (
-        id VARCHAR(36) PRIMARY KEY,
+        parentId VARCHAR(36) PRIMARY KEY,
         name VARCHAR(255),
         dob DATE,
         gender VARCHAR(10),
@@ -27,7 +27,7 @@ const initUserInheritance = async () => {
 
     await db.query(`
       CREATE TABLE IF NOT EXISTS children (
-        id VARCHAR(36) PRIMARY KEY,
+        childId VARCHAR(36) PRIMARY KEY,
         name VARCHAR(255),
         dob DATE,
         gender VARCHAR(10),

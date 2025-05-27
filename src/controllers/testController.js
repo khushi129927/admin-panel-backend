@@ -43,7 +43,7 @@ exports.uploadTestQuestions = async (req, res) => {
     ]));
 
     const sql = `INSERT INTO tests (
-      id, quarter, age, objective, question,
+      testId, quarter, age, objective, question,
       option1, points1, option2, points2,
       option3, points3, option4, points4,
       created_at

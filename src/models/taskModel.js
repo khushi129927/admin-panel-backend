@@ -48,7 +48,7 @@ const createTaskAssignmentTable = async () => {
       assigned_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       completed_at TIMESTAMP NULL,
       FOREIGN KEY (taskId) REFERENCES task(taskId) ON DELETE CASCADE,
-      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (userId) REFERENCES users(userId) ON DELETE CASCADE
     )
   `;
 

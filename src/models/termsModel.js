@@ -12,7 +12,7 @@ const createTermsTable = async () => {
       userId VARCHAR(36),
       accepted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       PRIMARY KEY (userId),
-      FOREIGN KEY (userId) REFERENCES users(id)
+      FOREIGN KEY (userId) REFERENCES users(userId)
     )`);
 
   console.log("✅ Terms tables ready.");

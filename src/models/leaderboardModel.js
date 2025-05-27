@@ -7,7 +7,7 @@ const createLeaderboardTable = async () => {
       points INT DEFAULT 0,
       rank INT,
       updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (userId) REFERENCES users(id)
+      FOREIGN KEY (userId) REFERENCES users(userId)
     )`;
   try {
     await db.query(query);

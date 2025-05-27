@@ -15,7 +15,7 @@ const createEqTables = async () => {
       question TEXT,
       options JSON,
       correctOption VARCHAR(10),
-      FOREIGN KEY (testId) REFERENCES eq_tests(id) ON DELETE CASCADE
+      FOREIGN KEY (testId) REFERENCES eq_tests(epTestsId) ON DELETE CASCADE
     )`);
 
   await db.query(`
@@ -25,8 +25,8 @@ const createEqTables = async () => {
       testId VARCHAR(36),
       score INT,
       submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (userId) REFERENCES users(id),
-      FOREIGN KEY (testId) REFERENCES eq_tests(id)
+      FOREIGN KEY (userId) REFERENCES users(userId),
+      FOREIGN KEY (testId) REFERENCES eq_tests(epTestsId)
     )`);
 
   console.log("✅ EQ tables created.");

@@ -7,7 +7,7 @@ const createSubscriptionTable = async () => {
       userId VARCHAR(36) NOT NULL,
       plan VARCHAR(255) NOT NULL,
       status ENUM('active', 'inactive') NOT NULL,
-      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (userId) REFERENCES users(userId) ON DELETE CASCADE
     )`;
 
   try {

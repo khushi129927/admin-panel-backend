@@ -9,8 +9,8 @@ const createFeedbackTable = async () => {
       rating INT,
       comment TEXT,
       created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (taskId) REFERENCES task(id),
-      FOREIGN KEY (userId) REFERENCES users(id)
+      FOREIGN KEY (taskId) REFERENCES task(taskId),
+      FOREIGN KEY (userId) REFERENCES users(userId)
     )`;
   try {
     await db.query(query);

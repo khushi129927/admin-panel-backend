@@ -25,8 +25,8 @@ const createCouponRedemptionsTable = async () => {
       userId VARCHAR(36),
       couponId VARCHAR(36),
       redeemed_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE,
-      FOREIGN KEY (couponId) REFERENCES coupons(id) ON DELETE CASCADE
+      FOREIGN KEY (userId) REFERENCES users(userId) ON DELETE CASCADE,
+      FOREIGN KEY (couponId) REFERENCES coupons(couponsId) ON DELETE CASCADE
     )`;
   try {
     await db.execute(sql);

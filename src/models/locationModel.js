@@ -9,7 +9,7 @@ const createLocationTable = async () => {
       country VARCHAR(100),
       latitude DECIMAL(9,6),
       longitude DECIMAL(9,6),
-      FOREIGN KEY (userId) REFERENCES users(id) ON DELETE CASCADE
+      FOREIGN KEY (userId) REFERENCES users(userId) ON DELETE CASCADE
     )`;
   try {
     await db.query(query);

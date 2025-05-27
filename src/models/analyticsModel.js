@@ -7,7 +7,7 @@ const createAnalyticsTable = async () => {
       total_tasks_completed INT DEFAULT 0,
       avg_eq_score FLOAT DEFAULT 0,
       last_test_taken TIMESTAMP,
-      FOREIGN KEY (userId) REFERENCES users(id)
+      FOREIGN KEY (userId) REFERENCES users(userId)
     )`;
   try {
     await db.query(query);

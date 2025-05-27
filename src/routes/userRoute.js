@@ -7,17 +7,17 @@ router.post("/register", registerUser);
 router.post("/login", loginUser);
 
 // 👨‍👩 Parent/Child
-router.post("/parent", createParent);
-router.post("/child", createChild);
-router.put("/parent/:id", updateParent);
-router.put("/child/:id", updateChild);
-router.get("/parent/:id/children", getChildren);
+router.post("/create-parent", createParent);
+router.post("/create-child", createChild);
+router.put("/update-parent/:id", updateParent);
+router.put("/update-child/:id", updateChild);
+router.get("/parent/:id/get-children", getChildren);
 
 // 📍 Location
-router.get("/:id/location", getLocation);
-router.put("/:id/location", updateLocation);
+router.get("/:id/get-location", getLocation);
+router.put("/:id/update-location", updateLocation);
 
 // 📤 All users (parent + child)
-router.get("/get-all", getUsers);
+router.get("/get-all-uaers", getUsers);
 
 module.exports = router;

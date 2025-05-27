@@ -21,6 +21,7 @@ const initUserInheritance = async () => {
         profession VARCHAR(255),
         hobbies TEXT,
         favourite_food VARCHAR(255),
+        FOREIGN KEY (parentId) REFERENCES users(userId) ON DELETE CASCADE
       );
     `);
 
@@ -36,6 +37,7 @@ const initUserInheritance = async () => {
         dream_career VARCHAR(255),
         favourite_sports VARCHAR(255),
         blood_group VARCHAR(10),
+        FOREIGN KEY (childId) REFERENCES users(userId) ON DELETE CASCADE
       );
     `);
 

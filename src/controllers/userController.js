@@ -57,12 +57,12 @@ exports.createParent = async (req, res) => {
   const { name, dob, email, password, gender, education, profession, hobbies, favourite_food } = req.body;
   try {
     const hashed = await bcrypt.hash(password, 10);
-    const id = uuidv4();
+    const parentId = uuidv4();
     await db.execute("INSERT INTO users (userId, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
-      [id, name, dob, email, hashed]);
+      [userId, name, dob, email, hashed]);
     await db.execute("INSERT INTO parents (parentId, name, dob, gender, education, profession, hobbies, favourite_food) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [id, name, gender, education, profession, hobbies, favourite_food]);
-    res.status(201).json({ success: true, id });
+      [parentId, name, gender, education, profession, hobbies, favourite_food]);
+    res.status(201).json({ success: true, parentId });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -73,12 +73,12 @@ exports.createChild = async (req, res) => {
   const { name, dob, email, password, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId } = req.body;
   try {
     const hashed = await bcrypt.hash(password, 10);
-    const id = uuidv4();
+    const childId = uuidv4();
     await db.execute("INSERT INTO users (userId, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
-      [id, name, dob, email, hashed]);
+      [userId, name, dob, email, hashed]);
     await db.execute("INSERT INTO children (childId, name, dob, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [id, name, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId]);
-    res.status(201).json({ success: true, id });
+      [childId, name, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId]);
+    res.status(201).json({ success: true, childId });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

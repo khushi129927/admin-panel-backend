@@ -58,10 +58,10 @@ exports.createParent = async (req, res) => {
   try {
     const hashed = await bcrypt.hash(password, 10);
     const parentId = uuidv4();
-    await db.execute("INSERT INTO users (userId, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
-      [userId, name, dob, email, hashed]);
+    await db.execute("INSERT INTO users (userId, email, password, type) VALUES (?, ?, ?, ?)",
+    [parentId, email, hashed, 'parent']);
     await db.execute("INSERT INTO parents (parentId, name, dob, gender, education, profession, hobbies, favourite_food) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-      [parentId, name, gender, education, profession, hobbies, favourite_food]);
+    [parentId, name, dob, gender, education, profession, hobbies, favourite_food]);
     res.status(201).json({ success: true, parentId });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -74,10 +74,10 @@ exports.createChild = async (req, res) => {
   try {
     const hashed = await bcrypt.hash(password, 10);
     const childId = uuidv4();
-    await db.execute("INSERT INTO users (userId, name, dob, email, password) VALUES (?, ?, ?, ?, ?)",
-      [userId, name, dob, email, hashed]);
-    await db.execute("INSERT INTO children (childId, name, dob, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
-      [childId, name, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId]);
+    await db.execute("INSERT INTO users (userId, email, password, type) VALUES (?, ?, ?, ?)",
+    [childId, email, hashed, 'child']);
+    await db.execute("INSERT INTO children (childId, name, dob, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+    [childId, name, dob, gender, school, grades, hobbies, dream_career, favourite_sports, blood_group, parentId]);
     res.status(201).json({ success: true, childId });
   } catch (error) {
     res.status(500).json({ error: error.message });

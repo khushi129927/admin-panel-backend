@@ -30,6 +30,7 @@ const initUserInheritance = async () => {
     await db.query(`
       CREATE TABLE IF NOT EXISTS children (
         childId VARCHAR(36) PRIMARY KEY,
+        parentId VARCHAR(36) NOT NULL,
         name VARCHAR(255),
         dob DATE,
         gender VARCHAR(10),

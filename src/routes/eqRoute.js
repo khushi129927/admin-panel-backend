@@ -3,7 +3,7 @@ const router = express.Router();
 const eqController = require("../controllers/eqController");
 
 router.get("/test", eqController.getEQTest);
-router.post("/submit", eqController.submitEQTest);
-router.get("/score/:userId", eqController.getEQScore);
+router.post("/submit-test", eqController.submitEQTest);
+router.get("/get-eq-score/:userId", eqController.getEQScore);
 
 module.exports = router;

@@ -148,17 +148,8 @@ exports.updateLocation = async (req, res) => {
 // 📤 Get All Users (Parent + Child)
 exports.getUsers = async (req, res) => {
   try {
-    const [parents] = await db.execute(`
-      SELECT u.userId, u.name, u.email, u.dob, 'parent' AS role,
-      p.gender, p.education, p.profession FROM users u
-      JOIN parents p ON u.userId = p.parentId`);
-
-    const [children] = await db.execute(`
-      SELECT u.userId, u.name, u.email, u.dob, 'child' AS role,
-      c.school, c.grades, c.blood_group FROM users u
-      JOIN children c ON u.userId = c.childId`);
-
-    res.json({ success: true, data: [...parents, ...children] });
+    const [results] = await db.query("SELECT * FROM users");
+    res.status(200).json({ success: true, data: results });
   } catch (error) {
     console.error("❌ Get Users Error:", error.message);
     res.status(500).json({ error: "Internal Server Error" });

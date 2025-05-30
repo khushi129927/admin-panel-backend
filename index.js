@@ -15,6 +15,12 @@ require("./src/models/subscriptionModel");
 require("./src/models/testModel");
 require(".//src/models/eqTestModel");
 require("./src/models/analyticsModel");
+require("./src/models/locationModel");
+require('./src/models/couponModel');
+require("./src/models/termsModel");
+require("./src/models/locationModel");
+require("./src/models/reviewsModel");
+require("./src/models/otpModel");
 
 // ✅ CORS: Allow local & tools like Postman
 const allowedOrigins = ["http://localhost:3000", undefined];

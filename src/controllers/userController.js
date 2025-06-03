@@ -32,46 +32,33 @@ exports.loginUser = async (req, res) => {
 };
 
 exports.createParent = async (req, res) => {
-  const {
-    name,
-    dob,
-    email,
-    password,
-    confirmPassword,
-    gender,
-    education,
-    profession,
-    hobbies,
-    favourite_food,
-  } = req.body;
+  const { name, email, password, confirmPassword } = req.body;
 
   try {
-    if (password !== confirmPassword)
+    // Validate password match
+    if (password !== confirmPassword) {
       return res.status(400).json({ error: "Passwords do not match" });
+    }
 
-    if (!/^\d{2}-\d{2}-\d{4}$/.test(dob))
-      return res.status(400).json({ error: "Invalid DOB format (DD-MM-YYYY)" });
-
-    const dobFormatted = formatDate(dob);
+    // Check if user already exists
     const [exists] = await db.execute("SELECT * FROM users WHERE email = ?", [email]);
-    if (exists.length)
+    if (exists.length) {
       return res.status(400).json({ error: "Email already exists" });
+    }
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
     const userId = uuidv4();
 
+    // Insert only name, email, and hashed password
     await db.execute(
-      `INSERT INTO users (
-        userId, name, dob, email, password,
-        gender, education, profession, hobbies, favourite_food
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, name, dobFormatted, email, hashed, gender, education, profession, hobbies, favourite_food]
+      `INSERT INTO users (userId, name, email, password) VALUES (?, ?, ?, ?)`,
+      [userId, name, email, hashedPassword]
     );
 
     res.status(201).json({
       success: true,
       message: "Parent created successfully",
-      userId
+      userId,
     });
   } catch (error) {
     console.error("❌ Create Parent Error:", error.message);

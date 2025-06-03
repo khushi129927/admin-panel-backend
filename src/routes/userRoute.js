@@ -1,9 +1,9 @@
 const express = require("express");
 const router = express.Router();
-const {registerUser, loginUser, createParent, createChild, updateParent, updateChild, getChildren, getLocation, updateLocation, getUsers} = require("../controllers/userController");
+const {loginUser, createParent, createChild, updateParent, updateChild, getChildren, getLocation, updateLocation, getUsers} = require("../controllers/userController");
 
 // 🔐 Auth
-router.post("/register", registerUser);
+router.post("/register", createParent);
 router.post("/login", loginUser);
 
 // 👨‍👩 Parent/Child

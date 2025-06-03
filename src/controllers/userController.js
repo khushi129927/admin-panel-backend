@@ -33,20 +33,33 @@ exports.loginUser = async (req, res) => {
 
 // 🧑‍🎓 Create Parent (with Auth Token)
 exports.createParent = async (req, res) => {
-  const {
-    name,
-    dob,
-    email,
-    password,
-    confirmPassword,
-    gender,
-    education,
-    profession,
-    hobbies,
-    favourite_food,
-  } = req.body;
+  // 🔐 Check for token
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
+  if (!token) return res.status(401).json({ error: "Unauthorized: No token provided" });
 
   try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+
+    // Optional: Check user type (only allow admins to create parents)
+    if (decoded.type !== "admin") {
+      return res.status(403).json({ error: "Forbidden: Only admins can create parents" });
+    }
+
+    // 🧩 Proceed with parent creation...
+    const {
+      name,
+      dob,
+      email,
+      password,
+      confirmPassword,
+      gender,
+      education,
+      profession,
+      hobbies,
+      favourite_food,
+    } = req.body;
+
     if (password !== confirmPassword)
       return res.status(400).json({ error: "Passwords do not match" });
 
@@ -66,24 +79,37 @@ exports.createParent = async (req, res) => {
         userId, name, dob, email, password, type,
         gender, education, profession, hobbies, favourite_food
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, name, dobFormatted, email, hashed, "parent", gender, education, profession, hobbies, favourite_food]
+      [
+        userId,
+        name,
+        dobFormatted,
+        email,
+        hashed,
+        "parent",
+        gender,
+        education,
+        profession,
+        hobbies,
+        favourite_food,
+      ]
     );
 
-    const token = jwt.sign({ id: userId, email, type: "parent" }, process.env.JWT_SECRET, {
+    const newToken = jwt.sign({ id: userId, email, type: "parent" }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
 
     res.status(201).json({
       success: true,
-      message: "Parent created successfully",
+      message: "Parent registered successfully",
       userId,
-      token,
+      token: newToken,
     });
   } catch (error) {
     console.error("❌ Create Parent Error:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    return res.status(403).json({ error: "Invalid or expired token" });
   }
 };
+
 
 
 // 👧 Create Child

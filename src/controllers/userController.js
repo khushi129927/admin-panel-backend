@@ -138,14 +138,29 @@ exports.createChild = async (req, res) => {
 // 🔁 Update Parent
 exports.updateParent = async (req, res) => {
   const { name, dob, email, gender, education, profession, hobbies, favourite_food } = req.body;
+
+  // Convert undefined fields to NULL
+  const safe = (v) => v === undefined ? null : v;
+
   try {
     await db.execute(
       `UPDATE users SET 
         name = ?, dob = ?, email = ?, gender = ?, education = ?, 
         profession = ?, hobbies = ?, favourite_food = ?
-      WHERE userId = ? AND type = 'parent'`,
-      [name, dob, email, gender, education, profession, hobbies, favourite_food, req.params.id]
+      WHERE userId = ?`,
+      [
+        safe(name),
+        safe(dob),
+        safe(email),
+        safe(gender),
+        safe(education),
+        safe(profession),
+        safe(hobbies),
+        safe(favourite_food),
+        req.params.id
+      ]
     );
+
     res.json({ success: true });
   } catch (error) {
     console.error("❌ Update Parent Error:", error.message);

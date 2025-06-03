@@ -31,7 +31,6 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-// 🧑‍🎓 Create Parent (with Auth Token)
 exports.createParent = async (req, res) => {
   const {
     name,
@@ -63,10 +62,10 @@ exports.createParent = async (req, res) => {
 
     await db.execute(
       `INSERT INTO users (
-        userId, name, dob, email, password, type,
+        userId, name, dob, email, password,
         gender, education, profession, hobbies, favourite_food
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [userId, name, dobFormatted, email, hashed, "parent", gender, education, profession, hobbies, favourite_food]
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [userId, name, dobFormatted, email, hashed, gender, education, profession, hobbies, favourite_food]
     );
 
     res.status(201).json({
@@ -79,7 +78,6 @@ exports.createParent = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
-
 
 
 // 👧 Create Child

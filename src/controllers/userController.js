@@ -2,6 +2,7 @@ const db = require("../config/db");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
+const axios = require("axios");
 
 // 📅 Date Formatter
 function formatDate(dateString) {
@@ -226,64 +227,76 @@ exports.getLocation = async (req, res) => {
 };
 
 // 📍 Update Location
-exports.updateLocation = async (req, res) => {
-  const { city, state, country, latitude, longitude } = req.body;
-  const safe = (v) => v === undefined ? null : v;
-
-  const userId = req.params.userId;
-  if (!userId) return res.status(400).json({ error: "User ID is required" });
+const geocodeCity = async (city, state, country) => {
+  const apiKey = process.env.OPENCAGE_API_KEY;
+  const query = [city, state, country].filter(Boolean).join(", ");
 
   try {
-    // Check if lat/lng is present → GPS mode
-    if (latitude !== undefined && longitude !== undefined) {
-      await db.execute(
-        `INSERT INTO locations 
-          (userId, city, state, country, latitude, longitude)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON DUPLICATE KEY UPDATE 
-          city=?, state=?, country=?, latitude=?, longitude=?`,
-        [
-          userId,
-          safe(city),
-          safe(state),
-          safe(country),
-          safe(latitude),
-          safe(longitude),
-          safe(city),
-          safe(state),
-          safe(country),
-          safe(latitude),
-          safe(longitude)
-        ]
-      );
-    } else {
-      // Manual address only
-      await db.execute(
-        `INSERT INTO locations 
-          (userId, city, state, country, latitude, longitude)
-        VALUES (?, ?, ?, ?, NULL, NULL)
-        ON DUPLICATE KEY UPDATE 
-          city=?, state=?, country=?, latitude=NULL, longitude=NULL`,
-        [
-          userId,
-          safe(city),
-          safe(state),
-          safe(country),
-          safe(city),
-          safe(state),
-          safe(country)
-        ]
-      );
-    }
+    const response = await axios.get(
+      `https://api.opencagedata.com/geocode/v1/json?q=${encodeURIComponent(query)}&key=${apiKey}`
+    );
 
-    res.json({ success: true });
-  } catch (error) {
-    console.error("❌ Update Location Error:", error.message);
-    res.status(500).json({ error: error.message });
+    if (response.data?.results?.length) {
+      const { lat, lng } = response.data.results[0].geometry;
+      return { latitude: lat, longitude: lng };
+    }
+  } catch (err) {
+    console.error("❌ Reverse Geocoding Failed:", err.message);
   }
+
+  return { latitude: null, longitude: null };
 };
 
+exports.updateLocation = async (req, res) => {
+  const { city, state, country, latitude, longitude } = req.body;
+  const userId = req.params.userId;
+  const safe = (v) => (typeof v === "undefined" ? null : v);
 
+  if (!userId) return res.status(400).json({ error: "Missing userId" });
+
+  let lat = safe(latitude);
+  let lng = safe(longitude);
+
+  // 🔄 If no lat/lng, try reverse geocoding from city/state/country
+  if ((lat === null || lng === null) && (city || state || country)) {
+    const coords = await geocodeCity(city, state, country);
+    lat = coords.latitude;
+    lng = coords.longitude;
+  }
+
+  // Still no lat/lng = reject
+  if (lat === null || lng === null) {
+    return res.status(400).json({ error: "Could not resolve coordinates" });
+  }
+
+  try {
+    await db.execute(
+      `INSERT INTO locations 
+        (userId, city, state, country, latitude, longitude)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE 
+        city = ?, state = ?, country = ?, latitude = ?, longitude = ?`,
+      [
+        userId,
+        safe(city),
+        safe(state),
+        safe(country),
+        lat,
+        lng,
+        safe(city),
+        safe(state),
+        safe(country),
+        lat,
+        lng
+      ]
+    );
+
+    res.status(200).json({ success: true });
+  } catch (error) {
+    console.error("❌ Update Location Error:", error.message);
+    res.status(500).json({ error: "Failed to update location" });
+  }
+};
 
 // 📤 Get All Users
 exports.getUsers = async (req, res) => {

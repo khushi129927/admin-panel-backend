@@ -229,9 +229,9 @@ exports.getLocation = async (req, res) => {
 exports.updateLocation = async (req, res) => {
   const { city, state, country, latitude, longitude } = req.body;
 
-  if (!latitude || !longitude) {
-    return res.status(400).json({ error: "Latitude and Longitude are required" });
-  }
+  if (latitude === undefined || longitude === undefined) {
+  return res.status(400).json({ error: "Latitude and Longitude are required" });
+}
 
   const safe = (v) => v === undefined ? null : v;
 

@@ -231,7 +231,7 @@ exports.updateLocation = async (req, res) => {
   try {
     await db.execute(
       `INSERT INTO locations 
-        (userID, city, state, country, latitude, longitude)
+        (userId, city, state, country, latitude, longitude)
       VALUES (?, ?, ?, ?, ?, ?)
       ON DUPLICATE KEY UPDATE city=?, state=?, country=?, latitude=?, longitude=?`,
       [req.params.userId, city, state, country, latitude, longitude, city, state, country, latitude, longitude]

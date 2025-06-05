@@ -228,40 +228,53 @@ exports.getLocation = async (req, res) => {
 // 📍 Update Location
 exports.updateLocation = async (req, res) => {
   const { city, state, country, latitude, longitude } = req.body;
-
-  console.log("🧾 req.body:", req.body);
-console.log("🧾 req.params.userId:", req.params.userId);
-
   const safe = (v) => v === undefined ? null : v;
 
-  const lat = safe(latitude);
-  const lng = safe(longitude);
-
-  if (lat === null || lng === null) {
-    return res.status(400).json({ error: "Latitude and Longitude are required" });
-  }
+  const userId = req.params.userId;
+  if (!userId) return res.status(400).json({ error: "User ID is required" });
 
   try {
-    await db.execute(
-      `INSERT INTO locations 
-        (userId, city, state, country, latitude, longitude)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE 
-        city=?, state=?, country=?, latitude=?, longitude=?`,
-      [
-        req.params.userId,
-        safe(city),
-        safe(state),
-        safe(country),
-        lat,
-        lng,
-        safe(city),
-        safe(state),
-        safe(country),
-        lat,
-        lng
-      ]
-    );
+    // Check if lat/lng is present → GPS mode
+    if (latitude !== undefined && longitude !== undefined) {
+      await db.execute(
+        `INSERT INTO locations 
+          (userId, city, state, country, latitude, longitude)
+        VALUES (?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE 
+          city=?, state=?, country=?, latitude=?, longitude=?`,
+        [
+          userId,
+          safe(city),
+          safe(state),
+          safe(country),
+          safe(latitude),
+          safe(longitude),
+          safe(city),
+          safe(state),
+          safe(country),
+          safe(latitude),
+          safe(longitude)
+        ]
+      );
+    } else {
+      // Manual address only
+      await db.execute(
+        `INSERT INTO locations 
+          (userId, city, state, country, latitude, longitude)
+        VALUES (?, ?, ?, ?, NULL, NULL)
+        ON DUPLICATE KEY UPDATE 
+          city=?, state=?, country=?, latitude=NULL, longitude=NULL`,
+        [
+          userId,
+          safe(city),
+          safe(state),
+          safe(country),
+          safe(city),
+          safe(state),
+          safe(country)
+        ]
+      );
+    }
 
     res.json({ success: true });
   } catch (error) {
@@ -269,6 +282,7 @@ console.log("🧾 req.params.userId:", req.params.userId);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 // 📤 Get All Users

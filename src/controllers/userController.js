@@ -229,6 +229,9 @@ exports.getLocation = async (req, res) => {
 exports.updateLocation = async (req, res) => {
   const { city, state, country, latitude, longitude } = req.body;
 
+  console.log("🧾 req.body:", req.body);
+console.log("🧾 req.params.userId:", req.params.userId);
+
   const safe = (v) => v === undefined ? null : v;
 
   const lat = safe(latitude);

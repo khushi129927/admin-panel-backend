@@ -228,13 +228,33 @@ exports.getLocation = async (req, res) => {
 // 📍 Update Location
 exports.updateLocation = async (req, res) => {
   const { city, state, country, latitude, longitude } = req.body;
+
+  if (!latitude || !longitude) {
+    return res.status(400).json({ error: "Latitude and Longitude are required" });
+  }
+
+  const safe = (v) => v === undefined ? null : v;
+
   try {
     await db.execute(
       `INSERT INTO locations 
         (userId, city, state, country, latitude, longitude)
       VALUES (?, ?, ?, ?, ?, ?)
-      ON DUPLICATE KEY UPDATE city=?, state=?, country=?, latitude=?, longitude=?`,
-      [req.params.userId, city, state, country, latitude, longitude, city, state, country, latitude, longitude]
+      ON DUPLICATE KEY UPDATE 
+        city=?, state=?, country=?, latitude=?, longitude=?`,
+      [
+        req.params.userId,
+        safe(city),
+        safe(state),
+        safe(country),
+        latitude,
+        longitude,
+        safe(city),
+        safe(state),
+        safe(country),
+        latitude,
+        longitude
+      ]
     );
     res.json({ success: true });
   } catch (error) {

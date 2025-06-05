@@ -229,11 +229,14 @@ exports.getLocation = async (req, res) => {
 exports.updateLocation = async (req, res) => {
   const { city, state, country, latitude, longitude } = req.body;
 
-  if (latitude === undefined || longitude === undefined) {
-  return res.status(400).json({ error: "Latitude and Longitude are required" });
-}
-
   const safe = (v) => v === undefined ? null : v;
+
+  const lat = safe(latitude);
+  const lng = safe(longitude);
+
+  if (lat === null || lng === null) {
+    return res.status(400).json({ error: "Latitude and Longitude are required" });
+  }
 
   try {
     await db.execute(
@@ -247,21 +250,23 @@ exports.updateLocation = async (req, res) => {
         safe(city),
         safe(state),
         safe(country),
-        latitude,
-        longitude,
+        lat,
+        lng,
         safe(city),
         safe(state),
         safe(country),
-        latitude,
-        longitude
+        lat,
+        lng
       ]
     );
+
     res.json({ success: true });
   } catch (error) {
     console.error("❌ Update Location Error:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // 📤 Get All Users
 exports.getUsers = async (req, res) => {

@@ -140,7 +140,9 @@ exports.createChild = async (req, res) => {
         dream_career,
         favourite_sports,
         blood_group,
-        userId,}
+        userId,
+        childId,
+      }
       });
   } catch (error) {
     console.error("❌ Create Child Error:", error.message);

@@ -212,26 +212,19 @@ exports.updateParent = async (req, res) => {
       ]
     );
 
+    // ✅ Step 4: Fetch updated data
+    const [updatedParent] = await db.execute("SELECT * FROM users WHERE userId = ?", [userId]);
+
     res.json({
       success: true,
-      parent: {
-        userId,
-        name,
-        dob,
-        email,
-        gender,
-        education,
-        profession,
-        hobbies,
-        favourite_food,
-        type
-      }
+      parent: updatedParent[0]
     });
   } catch (error) {
     console.error("❌ Update Parent Error:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 
@@ -302,21 +295,15 @@ exports.updateChild = async (req, res) => {
       ]
     );
 
+    // ✅ Step 5: Fetch updated data from DB
+    const [updatedUser] = await db.execute("SELECT * FROM users WHERE userId = ?", [childId]);
+    const [updatedChild] = await db.execute("SELECT * FROM children WHERE childId = ?", [childId]);
+
     res.json({
       success: true,
       child: {
-        childId,
-        name,
-        dob,
-        email,
-        gender,
-        school,
-        grades,
-        hobbies,
-        dream_career,
-        favourite_sports,
-        blood_group,
-        type
+        ...updatedUser[0],
+        ...updatedChild[0]
       }
     });
   } catch (error) {
@@ -324,6 +311,7 @@ exports.updateChild = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 

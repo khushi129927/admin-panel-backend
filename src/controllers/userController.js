@@ -69,7 +69,7 @@ exports.createParent = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Create Parent Error:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -153,7 +153,7 @@ exports.createChild = async (req, res) => {
       });
   } catch (error) {
     console.error("❌ Create Child Error:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 

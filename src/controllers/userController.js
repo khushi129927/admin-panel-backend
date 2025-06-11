@@ -69,9 +69,6 @@ exports.createParent = async (req, res) => {
 
 
 // 👧 Create Child
-const bcrypt = require("bcryptjs");
-const { v4: uuidv4 } = require("uuid");
-
 // Helper to avoid SQL bind errors
 const safe = (v) => v === undefined ? null : v;
 

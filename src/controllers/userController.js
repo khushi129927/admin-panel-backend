@@ -287,7 +287,7 @@ exports.updateChild = async (req, res) => {
     await db.execute(
       `UPDATE children SET 
         name = ?, gender = ?, school = ?, grades = ?, hobbies = ?, 
-        dream_career = ?, favourite_sports = ?, blood_group = ?,
+        dream_career = ?, favourite_sports = ?, blood_group = ?
       WHERE childId = ?`,
       [
         name,
@@ -298,7 +298,7 @@ exports.updateChild = async (req, res) => {
         dream_career,
         favourite_sports,
         blood_group,
-        childId,
+        childId
       ]
     );
 

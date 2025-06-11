@@ -201,7 +201,17 @@ exports.updateParent = async (req, res) => {
       ]
     );
 
-    res.json({ success: true });
+    res.json({ 
+      success: true,
+      parent: name,
+        dob,
+        email,
+        gender,
+        education,
+        profession,
+        hobbies,
+        favourite_food,
+   });
   } catch (error) {
     console.error("❌ Update Parent Error:", error.message);
     res.status(500).json({ error: error.message });
@@ -268,7 +278,18 @@ exports.updateChild = async (req, res) => {
       ]
     );
 
-    res.json({ success: true });
+    res.json({ 
+      success: true,
+      child: name,
+        gender,
+        school,
+        grades,
+        hobbies,
+        dream_career,
+        favourite_sports,
+        blood_group,
+        childId,
+       });
   } catch (error) {
     console.error("❌ Update Child Error:", error.message);
     res.status(500).json({ error: error.message });

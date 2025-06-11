@@ -196,7 +196,7 @@ exports.updateParent = async (req, res) => {
     await db.execute(
       `UPDATE users SET 
         name = ?, dob = ?, email = ?, gender = ?, education = ?, 
-        profession = ?, hobbies = ?, favourite_food = ?
+        profession = ?, hobbies = ?, favourite_food = ?, type = 'parent'
       WHERE userId = ?`,
       [
         safe(name),
@@ -222,7 +222,8 @@ exports.updateParent = async (req, res) => {
         education,
         profession,
         hobbies,
-        favourite_food
+        favourite_food,
+        type
       }
     });
   } catch (error) {
@@ -277,7 +278,7 @@ exports.updateChild = async (req, res) => {
 
     // Step 3: Update users table
     await db.execute(
-      "UPDATE users SET name = ?, dob = ?, email = ? WHERE userId = ?",
+      "UPDATE users SET name = ?, dob = ?, email = ?, type = child WHERE userId = ?",
       [name, dob, email, childId]
     );
 

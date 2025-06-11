@@ -82,7 +82,7 @@ exports.createChild = async (req, res) => {
     dream_career,
     favourite_sports,
     blood_group,
-    parentId,
+    userId,
   } = req.body;
 
   try {
@@ -99,7 +99,7 @@ exports.createChild = async (req, res) => {
     await db.execute(
       `INSERT INTO children (
         childId, name, dob, gender, school, grades, hobbies,
-        dream_career, favourite_sports, blood_group, parentId
+        dream_career, favourite_sports, blood_group, userId
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         childId,
@@ -112,7 +112,7 @@ exports.createChild = async (req, res) => {
         dream_career,
         favourite_sports,
         blood_group,
-        parentId,
+        userId,
       ]
     );
 

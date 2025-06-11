@@ -144,7 +144,7 @@ exports.updateParent = async (req, res) => {
         safe(education),
         safe(profession),
         safe(hobbies),
-        safe(favourite_food),
+        safe(req.body.favourite_food),
         req.params.id
       ]
     );

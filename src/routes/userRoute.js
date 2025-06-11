@@ -9,8 +9,8 @@ router.post("/login", loginUser);
 // 👨‍👩 Parent/Child
 router.post("/create-parent", createParent);
 router.post("/create-child", createChild);
-router.put("/update-parent/:userId", updateParent);
-router.put("/update-child/:childId", updateChild);
+router.put("/update-parent/:id", updateParent);
+router.put("/update-child/:id", updateChild);
 router.get("/parent/:userId/get-children", getChildren);
 
 // 📍 Location

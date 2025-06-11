@@ -234,7 +234,7 @@ exports.updateChild = async (req, res) => {
 // 👀 Get Children of Parent
 exports.getChildren = async (req, res) => {
   try {
-    const [children] = await db.execute("SELECT * FROM children WHERE parentId = ?", [req.params.id]);
+    const [children] = await db.execute("SELECT * FROM children WHERE userId = ?", [req.params.id]);
     res.json({ success: true, children });
   } catch (error) {
     console.error("❌ Get Children Error:", error.message);

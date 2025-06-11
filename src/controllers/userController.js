@@ -229,7 +229,7 @@ exports.updateParent = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Update Parent Error:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 
@@ -321,7 +321,7 @@ exports.updateChild = async (req, res) => {
     });
   } catch (error) {
     console.error("❌ Update Child Error:", error.message);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: error.message });
   }
 };
 

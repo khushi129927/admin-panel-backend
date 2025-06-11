@@ -91,19 +91,24 @@ exports.createChild = async (req, res) => {
     userId, // parentId
   } = req.body;
 
-  if (!email || !password || !userId) {
-    return res.status(400).json({ error: "Email, password, and userId are required." });
+  const safe = (v) => (typeof v === "undefined" ? null : v);
+
+  if (!userId) {
+    return res.status(400).json({ error: "User ID is required." });
   }
 
   try {
-    const hashed = await bcrypt.hash(password, 10);
     const childId = uuidv4();
 
-    // Insert into users table
-    await db.execute(
-      "INSERT INTO users (userId, email, password, type) VALUES (?, ?, ?, ?)",
-      [childId, safe(email), hashed, "child"]
-    );
+    // ✅ If email and password provided, insert into users table
+    if (email && password) {
+      const hashed = await bcrypt.hash(password, 10);
+
+      await db.execute(
+        "INSERT INTO users (userId, email, password, type) VALUES (?, ?, ?, ?)",
+        [childId, safe(email), hashed, "child"]
+      );
+    }
 
     // Insert into children table
     await db.execute(
@@ -126,13 +131,13 @@ exports.createChild = async (req, res) => {
       ]
     );
 
-    res.status(201).json({ 
-      success: true, 
-      child: { 
+    res.status(201).json({
+      success: true,
+      child: {
+        childId,
         name,
         dob,
         email,
-        password,
         gender,
         school,
         grades,
@@ -140,10 +145,9 @@ exports.createChild = async (req, res) => {
         dream_career,
         favourite_sports,
         blood_group,
-        userId,
-        childId,
+        userId
       }
-      });
+    });
   } catch (error) {
     console.error("❌ Create Child Error:", error.message);
     res.status(500).json({ error: error.message });

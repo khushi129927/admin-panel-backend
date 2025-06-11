@@ -196,7 +196,7 @@ exports.updateParent = async (req, res) => {
     await db.execute(
       `UPDATE users SET 
         name = ?, dob = ?, email = ?, gender = ?, education = ?, 
-        profession = ?, hobbies = ?, favourite_food = ?, type = 'parent'
+        profession = ?, hobbies = ?, favourite_food = ?, type = ?
       WHERE userId = ?`,
       [
         safe(name),
@@ -207,6 +207,7 @@ exports.updateParent = async (req, res) => {
         safe(profession),
         safe(hobbies),
         safe(favourite_food),
+        'parent',
         userId
       ]
     );
@@ -278,8 +279,8 @@ exports.updateChild = async (req, res) => {
 
     // Step 3: Update users table
     await db.execute(
-      "UPDATE users SET name = ?, dob = ?, email = ?, type = child WHERE userId = ?",
-      [name, dob, email, childId]
+      "UPDATE users SET name = ?, dob = ?, email = ?, type = ? WHERE userId = ?",
+      [name, dob, email, "child", childId]
     );
 
     // Step 4: Update children table
@@ -314,7 +315,8 @@ exports.updateChild = async (req, res) => {
         hobbies,
         dream_career,
         favourite_sports,
-        blood_group
+        blood_group,
+        type
       }
     });
   } catch (error) {

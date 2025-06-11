@@ -36,13 +36,18 @@ exports.createParent = async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
 
   try {
+    // Ensure all required fields are present
+    if (!name || !email || !password || !confirmPassword) {
+      return res.status(400).json({ error: "Name, email, and both password fields are required." });
+    }
+
     if (password !== confirmPassword) {
-      return res.status(400).json({ error: "Passwords do not match" });
+      return res.status(400).json({ error: "Passwords do not match." });
     }
 
     const [exists] = await db.execute("SELECT * FROM users WHERE email = ?", [email]);
     if (exists.length) {
-      return res.status(400).json({ error: "Email already exists" });
+      return res.status(400).json({ error: "Email already exists." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -59,8 +64,7 @@ exports.createParent = async (req, res) => {
       parent: {
         userId,
         name,
-        email
-        // No password or type returned for security
+        email,
       },
     });
   } catch (error) {
@@ -88,10 +92,8 @@ exports.createChild = async (req, res) => {
     userId, // parentId
   } = req.body;
 
-  const safe = (v) => (typeof v === "undefined" || v === "") ? null : v;
-
   if (!userId) {
-    return res.status(400).json({ error: "User ID is required." });
+    return res.status(400).json({ error: "userId (parentId) is required." });
   }
 
   try {
@@ -102,13 +104,12 @@ exports.createChild = async (req, res) => {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    // ✅ Always insert into users (even if email/password are null)
+    // Insert into users even if email or password is missing
     await db.execute(
       "INSERT INTO users (userId, email, password, type) VALUES (?, ?, ?, ?)",
-      [childId, safe(email), hashedPassword, "child"]
+      [childId, email || null, hashedPassword, "child"]
     );
 
-    // Insert into children
     await db.execute(
       `INSERT INTO children (
         childId, name, dob, gender, school, grades, hobbies,
@@ -116,41 +117,30 @@ exports.createChild = async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         childId,
-        safe(name),
-        safe(dob),
-        safe(gender),
-        safe(school),
-        safe(grades),
-        safe(hobbies),
-        safe(dream_career),
-        safe(favourite_sports),
-        safe(blood_group),
-        safe(userId),
+        name || null,
+        dob || null,
+        gender || null,
+        school || null,
+        grades || null,
+        hobbies || null,
+        dream_career || null,
+        favourite_sports || null,
+        blood_group || null,
+        userId,
       ]
     );
 
     res.status(201).json({
       success: true,
-      child: {
-        childId,
-        name,
-        dob,
-        email: safe(email),
-        gender,
-        school,
-        grades,
-        hobbies,
-        dream_career,
-        favourite_sports,
-        blood_group,
-        userId
-      }
+      childId,
+      email: email || null,
     });
   } catch (error) {
     console.error("❌ Create Child Error:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 // 🔁 Update Parent

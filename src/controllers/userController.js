@@ -104,7 +104,7 @@ exports.createChild = async (req, res) => {
 
     // Insert into users table
     await db.execute(
-      "INSERT INTO users (userId, email, password) VALUES (?, ?, ?)",
+      "INSERT INTO users (userId, email, password, type) VALUES (?, ?, ?, ?)",
       [childId, safe(email), hashed, "child"]
     );
 

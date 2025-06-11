@@ -69,6 +69,12 @@ exports.createParent = async (req, res) => {
 
 
 // 👧 Create Child
+const bcrypt = require("bcryptjs");
+const { v4: uuidv4 } = require("uuid");
+
+// Helper to avoid SQL bind errors
+const safe = (v) => v === undefined ? null : v;
+
 exports.createChild = async (req, res) => {
   const {
     name,
@@ -82,20 +88,30 @@ exports.createChild = async (req, res) => {
     dream_career,
     favourite_sports,
     blood_group,
-    userId,
+    userId, // parentId
   } = req.body;
+
+  // Log input to debug issues
+  console.log("Incoming body:", {
+    name, dob, email, password, gender, school, grades,
+    hobbies, dream_career, favourite_sports, blood_group, userId
+  });
+
+  if (!email || !password || !userId) {
+    return res.status(400).json({ error: "Email, password, and userId are required." });
+  }
 
   try {
     const hashed = await bcrypt.hash(password, 10);
     const childId = uuidv4();
 
-    await db.execute("INSERT INTO users (userId, email, password, type) VALUES (?, ?, ?, ?)", [
-      childId,
-      email,
-      hashed,
-      "child",
-    ]);
+    // Insert into users table
+    await db.execute(
+      "INSERT INTO users (userId, email, password, type) VALUES (?, ?, ?, ?)",
+      [childId, safe(email), hashed, "child"]
+    );
 
+    // Insert into children table
     await db.execute(
       `INSERT INTO children (
         childId, name, dob, gender, school, grades, hobbies,
@@ -103,16 +119,16 @@ exports.createChild = async (req, res) => {
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         childId,
-        name,
-        dob,
-        gender,
-        school,
-        grades,
-        hobbies,
-        dream_career,
-        favourite_sports,
-        blood_group,
-        userId,
+        safe(name),
+        safe(dob),
+        safe(gender),
+        safe(school),
+        safe(grades),
+        safe(hobbies),
+        safe(dream_career),
+        safe(favourite_sports),
+        safe(blood_group),
+        safe(userId),
       ]
     );
 
@@ -122,6 +138,7 @@ exports.createChild = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 // 🔁 Update Parent
 exports.updateParent = async (req, res) => {

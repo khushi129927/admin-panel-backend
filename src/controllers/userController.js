@@ -72,9 +72,6 @@ exports.createParent = async (req, res) => {
 
 
 // 👧 Create Child
-// Helper to avoid SQL bind errors
-const safe = (v) => v === undefined ? null : v;
-
 exports.createChild = async (req, res) => {
   const {
     name,
@@ -91,7 +88,7 @@ exports.createChild = async (req, res) => {
     userId, // parentId
   } = req.body;
 
-  const safe = (v) => (typeof v === "undefined" ? null : v);
+  const safe = (v) => (typeof v === "undefined" || v === "") ? null : v;
 
   if (!userId) {
     return res.status(400).json({ error: "User ID is required." });
@@ -99,18 +96,19 @@ exports.createChild = async (req, res) => {
 
   try {
     const childId = uuidv4();
+    let hashedPassword = null;
 
-    // ✅ If email and password provided, insert into users table
-    if (email && password) {
-      const hashed = await bcrypt.hash(password, 10);
-
-      await db.execute(
-        "INSERT INTO users (userId, email, password, type) VALUES (?, ?, ?, ?)",
-        [childId, safe(email), hashed, "child"]
-      );
+    if (password) {
+      hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    // Insert into children table
+    // ✅ Always insert into users (even if email/password are null)
+    await db.execute(
+      "INSERT INTO users (userId, email, password, type) VALUES (?, ?, ?, ?)",
+      [childId, safe(email), hashedPassword, "child"]
+    );
+
+    // Insert into children
     await db.execute(
       `INSERT INTO children (
         childId, name, dob, gender, school, grades, hobbies,
@@ -137,7 +135,7 @@ exports.createChild = async (req, res) => {
         childId,
         name,
         dob,
-        email,
+        email: safe(email),
         gender,
         school,
         grades,

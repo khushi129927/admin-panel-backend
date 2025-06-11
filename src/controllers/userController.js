@@ -335,6 +335,17 @@ exports.getChildren = async (req, res) => {
   }
 };
 
+exports.getChildrenById = async (req, res) => {
+  try {
+    const [children] = await db.execute("SELECT * FROM children WHERE childId = ?", [req.params.childId]);
+    res.json({ success: true, children });
+  } catch (error) {
+    console.error("❌ Get Children Error:", error.message);
+    res.status(500).json({ error: error.message });
+  }
+};
+
+
 // 📍 Get Location
 exports.getLocation = async (req, res) => {
   try {

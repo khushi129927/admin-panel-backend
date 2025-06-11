@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {loginUser, createParent, createChild, updateParent, updateChild, getChildren, getLocation, updateLocation, getUsers} = require("../controllers/userController");
+const {loginUser, createParent, createChild, updateParent, updateChild, getChildren, getChildrenById, getLocation, updateLocation, getUsers} = require("../controllers/userController");
 
 // 🔐 Auth
 router.post("/register", createParent);
@@ -12,6 +12,7 @@ router.post("/create-child", createChild);
 router.put("/update-parent/:id", updateParent);
 router.put("/update-child/:childId", updateChild);
 router.get("/parent/:id/get-children", getChildren);
+router.get("/:childId/get-children", getChildrenById);
 
 // 📍 Location
 router.get("/:id/get-location", getLocation);

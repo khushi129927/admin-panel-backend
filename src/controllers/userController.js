@@ -125,10 +125,36 @@ exports.createChild = async (req, res) => {
 
 // 🔁 Update Parent
 exports.updateParent = async (req, res) => {
-  const { name, dob, email, gender, education, profession, hobbies, favourite_food } = req.body;
+  const {
+    name,
+    dob,
+    email,
+    gender,
+    education,
+    profession,
+    hobbies,
+    favourite_food
+  } = req.body;
 
-  // Convert undefined fields to NULL
   const safe = (v) => v === undefined ? null : v;
+
+  const userId = req.params.id; 
+
+  console.log("Bind values:", [
+    safe(name),
+    safe(dob),
+    safe(email),
+    safe(gender),
+    safe(education),
+    safe(profession),
+    safe(hobbies),
+    safe(favourite_food),
+    userId
+  ]);
+
+  if (!userId) {
+    return res.status(400).json({ error: "User ID is required in params." });
+  }
 
   try {
     await db.execute(
@@ -144,8 +170,8 @@ exports.updateParent = async (req, res) => {
         safe(education),
         safe(profession),
         safe(hobbies),
-        safe(req.body.favourite_food),
-        req.params.id
+        safe(favourite_food),
+        userId
       ]
     );
 
@@ -155,6 +181,7 @@ exports.updateParent = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // 🔁 Update Child
 exports.updateChild = async (req, res) => {

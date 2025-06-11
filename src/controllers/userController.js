@@ -59,7 +59,13 @@ exports.createParent = async (req, res) => {
     res.status(201).json({
       success: true,
       message: "Parent created successfully",
-      userId,
+      parent: {
+        userId,
+        name,
+        email,
+        password,
+        type
+      },
     });
   } catch (error) {
     console.error("❌ Create Parent Error:", error.message);
@@ -129,7 +135,22 @@ exports.createChild = async (req, res) => {
       ]
     );
 
-    res.status(201).json({ success: true, childId });
+    res.status(201).json({ 
+      success: true, 
+      child: { 
+        name,
+        dob,
+        email,
+        password,
+        gender,
+        school,
+        grades,
+        hobbies,
+        dream_career,
+        favourite_sports,
+        blood_group,
+        userId,}
+      });
   } catch (error) {
     console.error("❌ Create Child Error:", error.message);
     res.status(500).json({ error: "Internal Server Error" });

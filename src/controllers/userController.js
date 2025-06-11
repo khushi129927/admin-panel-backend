@@ -52,8 +52,8 @@ exports.createParent = async (req, res) => {
 
     // Insert only name, email, and hashed password
     await db.execute(
-      `INSERT INTO users (userId, name, email, password) VALUES (?, ?, ?, ?)`,
-      [userId, name, email, hashedPassword]
+      `INSERT INTO users (userId, name, email, password, type) VALUES (?, ?, ?, ?, ?)`,
+      [userId, name, email, hashedPassword, "parent"]
     );
 
     res.status(201).json({

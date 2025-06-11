@@ -14,6 +14,7 @@ const initUserInheritance = async () => {
         education VARCHAR(255),
         profession VARCHAR(255),
         hobbies TEXT,
+        type VARCHAR(10),
         favourite_food VARCHAR(255)
       );
     `);

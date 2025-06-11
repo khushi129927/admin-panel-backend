@@ -174,8 +174,8 @@ exports.updateParent = async (req, res) => {
   try {
     // Step 1: Ensure the user exists and is a parent
     const [userRows] = await db.execute(
-      `SELECT * FROM users WHERE userId = ? AND type = 'parent'`,
-      [userId]
+      `SELECT * FROM users WHERE userId = ? AND type = ?`,
+      [userId, 'parent']
     );
 
     if (userRows.length === 0) {
@@ -287,7 +287,7 @@ exports.updateChild = async (req, res) => {
     await db.execute(
       `UPDATE children SET 
         name = ?, gender = ?, school = ?, grades = ?, hobbies = ?, 
-        dream_career = ?, favourite_sports = ?, blood_group = ?
+        dream_career = ?, favourite_sports = ?, blood_group = ?,
       WHERE childId = ?`,
       [
         name,
@@ -440,5 +440,15 @@ exports.getUsers = async (req, res) => {
   } catch (error) {
     console.error("❌ Get Users Error:", error.message);
     res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+exports.getParentById = async (req, res) => {
+  try {
+    const [parent] = await db.execute("SELECT * FROM users WHERE userId = ?", [req.params.userId]);
+    res.json({ success: true, parent });
+  } catch (error) {
+    console.error("❌ Get Parent Error:", error.message);
+    res.status(500).json({ error: error.message });
   }
 };

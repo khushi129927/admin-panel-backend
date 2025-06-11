@@ -172,7 +172,7 @@ exports.updateParent = async (req, res) => {
   }
 
   try {
-    // Step 1: Check if user exists and is a parent
+    // Step 1: Ensure the user exists and is a parent
     const [userRows] = await db.execute(
       `SELECT * FROM users WHERE userId = ? AND type = 'parent'`,
       [userId]
@@ -182,7 +182,17 @@ exports.updateParent = async (req, res) => {
       return res.status(403).json({ error: "Invalid user or not a parent." });
     }
 
-    // Step 2: Proceed to update
+    // Step 2: Check if the new email is used by another user
+    const [emailRows] = await db.execute(
+      `SELECT * FROM users WHERE email = ? AND userId != ?`,
+      [email, userId]
+    );
+
+    if (emailRows.length > 0) {
+      return res.status(400).json({ error: "Email already in use by another account." });
+    }
+
+    // Step 3: Proceed with the update
     await db.execute(
       `UPDATE users SET 
         name = ?, dob = ?, email = ?, gender = ?, education = ?, 
@@ -201,22 +211,26 @@ exports.updateParent = async (req, res) => {
       ]
     );
 
-    res.json({ 
+    res.json({
       success: true,
-      parent: name,
+      parent: {
+        userId,
+        name,
         dob,
         email,
         gender,
         education,
         profession,
         hobbies,
-        favourite_food,
-   });
+        favourite_food
+      }
+    });
   } catch (error) {
     console.error("❌ Update Parent Error:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 // 🔁 Update Child
@@ -241,7 +255,7 @@ exports.updateChild = async (req, res) => {
   }
 
   try {
-    // Step 1: Check if child exists in the children table
+    // Step 1: Check if child exists
     const [childRows] = await db.execute(
       "SELECT * FROM children WHERE childId = ?",
       [childId]
@@ -251,20 +265,28 @@ exports.updateChild = async (req, res) => {
       return res.status(404).json({ error: "Child not found." });
     }
 
-    // Step 2: Update users table
-    await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE userId=?", [
-      name,
-      dob,
-      email,
-      childId,
-    ]);
+    // Step 2: Check if email already exists for another user
+    const [emailRows] = await db.execute(
+      "SELECT * FROM users WHERE email = ? AND userId != ?",
+      [email, childId]
+    );
 
-    // Step 3: Update children table
+    if (emailRows.length > 0) {
+      return res.status(400).json({ error: "Email already in use by another user." });
+    }
+
+    // Step 3: Update users table
+    await db.execute(
+      "UPDATE users SET name = ?, dob = ?, email = ? WHERE userId = ?",
+      [name, dob, email, childId]
+    );
+
+    // Step 4: Update children table
     await db.execute(
       `UPDATE children SET 
-        name=?, gender=?, school=?, grades=?, hobbies=?, 
-        dream_career=?, favourite_sports=?, blood_group=?
-      WHERE childId=?`,
+        name = ?, gender = ?, school = ?, grades = ?, hobbies = ?, 
+        dream_career = ?, favourite_sports = ?, blood_group = ?
+      WHERE childId = ?`,
       [
         name,
         gender,
@@ -278,23 +300,28 @@ exports.updateChild = async (req, res) => {
       ]
     );
 
-    res.json({ 
+    res.json({
       success: true,
-      child: name,
+      child: {
+        childId,
+        name,
+        dob,
+        email,
         gender,
         school,
         grades,
         hobbies,
         dream_career,
         favourite_sports,
-        blood_group,
-        childId,
-       });
+        blood_group
+      }
+    });
   } catch (error) {
     console.error("❌ Update Child Error:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 // 👀 Get Children of Parent

@@ -36,12 +36,10 @@ exports.createParent = async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
 
   try {
-    // Validate password match
     if (password !== confirmPassword) {
       return res.status(400).json({ error: "Passwords do not match" });
     }
 
-    // Check if user already exists
     const [exists] = await db.execute("SELECT * FROM users WHERE email = ?", [email]);
     if (exists.length) {
       return res.status(400).json({ error: "Email already exists" });
@@ -50,7 +48,6 @@ exports.createParent = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
     const userId = uuidv4();
 
-    // Insert only name, email, and hashed password
     await db.execute(
       `INSERT INTO users (userId, name, email, password, type) VALUES (?, ?, ?, ?, ?)`,
       [userId, name, email, hashedPassword, "parent"]
@@ -62,16 +59,16 @@ exports.createParent = async (req, res) => {
       parent: {
         userId,
         name,
-        email,
-        password,
-        type
+        email
+        // No password or type returned for security
       },
     });
   } catch (error) {
     console.error("❌ Create Parent Error:", error.message);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 // 👧 Create Child
@@ -93,12 +90,6 @@ exports.createChild = async (req, res) => {
     blood_group,
     userId, // parentId
   } = req.body;
-
-  // Log input to debug issues
-  console.log("Incoming body:", {
-    name, dob, email, password, gender, school, grades,
-    hobbies, dream_career, favourite_sports, blood_group, userId
-  });
 
   if (!email || !password || !userId) {
     return res.status(400).json({ error: "Email, password, and userId are required." });
@@ -172,26 +163,24 @@ exports.updateParent = async (req, res) => {
   } = req.body;
 
   const safe = (v) => v === undefined ? null : v;
-
-  const userId = req.params.id; 
-
-  console.log("Bind values:", [
-    safe(name),
-    safe(dob),
-    safe(email),
-    safe(gender),
-    safe(education),
-    safe(profession),
-    safe(hobbies),
-    safe(favourite_food),
-    userId
-  ]);
+  const userId = req.params.id;
 
   if (!userId) {
     return res.status(400).json({ error: "User ID is required in params." });
   }
 
   try {
+    // Step 1: Check if user exists and is a parent
+    const [userRows] = await db.execute(
+      `SELECT * FROM users WHERE userId = ? AND type = 'parent'`,
+      [userId]
+    );
+
+    if (userRows.length === 0) {
+      return res.status(403).json({ error: "Invalid user or not a parent." });
+    }
+
+    // Step 2: Proceed to update
     await db.execute(
       `UPDATE users SET 
         name = ?, dob = ?, email = ?, gender = ?, education = ?, 
@@ -233,14 +222,32 @@ exports.updateChild = async (req, res) => {
     blood_group,
   } = req.body;
 
+  const childId = req.params.id;
+
+  if (!childId) {
+    return res.status(400).json({ error: "Child ID is required in params." });
+  }
+
   try {
+    // Step 1: Check if child exists in the children table
+    const [childRows] = await db.execute(
+      "SELECT * FROM children WHERE childId = ?",
+      [childId]
+    );
+
+    if (childRows.length === 0) {
+      return res.status(404).json({ error: "Child not found." });
+    }
+
+    // Step 2: Update users table
     await db.execute("UPDATE users SET name=?, dob=?, email=? WHERE userId=?", [
       name,
       dob,
       email,
-      req.params.id,
+      childId,
     ]);
 
+    // Step 3: Update children table
     await db.execute(
       `UPDATE children SET 
         name=?, gender=?, school=?, grades=?, hobbies=?, 
@@ -255,7 +262,7 @@ exports.updateChild = async (req, res) => {
         dream_career,
         favourite_sports,
         blood_group,
-        req.params.id,
+        childId,
       ]
     );
 
@@ -265,6 +272,7 @@ exports.updateChild = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // 👀 Get Children of Parent
 exports.getChildren = async (req, res) => {

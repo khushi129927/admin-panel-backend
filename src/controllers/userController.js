@@ -224,7 +224,7 @@ exports.updateChild = async (req, res) => {
     blood_group,
   } = req.body;
 
-  const childId = req.params.id;
+  const childId = req.params.childId;
 
   if (!childId) {
     return res.status(400).json({ error: "Child ID is required in params." });

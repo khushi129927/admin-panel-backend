@@ -145,10 +145,6 @@ exports.createChild = async (req, res) => {
 
 // 🔁 Update Parent
 exports.updateParent = async (req, res) => {
-  const fields = [
-    "name", "dob", "email", "gender",
-    "education", "profession", "hobbies", "favourite_food"
-  ];
   const userId = req.params.id;
 
   if (!userId) {
@@ -157,44 +153,55 @@ exports.updateParent = async (req, res) => {
 
   try {
     const [userRows] = await db.execute(
-      `SELECT * FROM users WHERE userId = ? AND type = ?`,
-      [userId, 'parent']
+      `SELECT * FROM users WHERE userId = ? AND type = 'parent'`,
+      [userId]
     );
+
     if (userRows.length === 0) {
       return res.status(403).json({ error: "Invalid user or not a parent." });
     }
 
-    if (req.body.email) {
+    const existing = userRows[0];
+
+    const {
+      name = existing.name,
+      dob = existing.dob,
+      email = existing.email,
+      gender = existing.gender,
+      education = existing.education,
+      profession = existing.profession,
+      hobbies = existing.hobbies,
+      favourite_food = existing.favourite_food
+    } = req.body;
+
+    // If user changed email, check for uniqueness
+    if (email !== existing.email) {
       const [emailRows] = await db.execute(
         `SELECT * FROM users WHERE email = ? AND userId != ?`,
-        [req.body.email, userId]
+        [email, userId]
       );
       if (emailRows.length > 0) {
         return res.status(400).json({ error: "Email already in use by another account." });
       }
     }
 
-    const updates = [];
-    const values = [];
-
-    for (const field of fields) {
-      if (req.body[field] !== undefined) {
-        updates.push(`${field} = ?`);
-        values.push(req.body[field]);
-      }
-    }
-
-    if (updates.length === 0) {
-      return res.status(400).json({ error: "No valid fields provided for update." });
-    }
-
-    updates.push("type = ?");
-    values.push("parent");
-    values.push(userId);
-
     await db.execute(
-      `UPDATE users SET ${updates.join(", ")} WHERE userId = ?`,
-      values
+      `UPDATE users SET 
+        name = ?, dob = ?, email = ?, gender = ?, education = ?, 
+        profession = ?, hobbies = ?, favourite_food = ?, type = ?
+      WHERE userId = ?`,
+      [
+        name,
+        dob,
+        email,
+        gender,
+        education,
+        profession,
+        hobbies,
+        favourite_food,
+        'parent',
+        userId
+      ]
     );
 
     const [updatedParent] = await db.execute("SELECT * FROM users WHERE userId = ?", [userId]);
@@ -213,13 +220,9 @@ exports.updateParent = async (req, res) => {
 
 
 
+
 // 🔁 Update Child
 exports.updateChild = async (req, res) => {
-  const userFields = ["name", "dob", "email"];
-  const childFields = [
-    "name", "gender", "school", "grades", "hobbies",
-    "dream_career", "favourite_sports", "blood_group"
-  ];
   const childId = req.params.childId;
 
   if (!childId) {
@@ -227,61 +230,61 @@ exports.updateChild = async (req, res) => {
   }
 
   try {
-    const [childRows] = await db.execute("SELECT * FROM children WHERE childId = ?", [childId]);
-    if (childRows.length === 0) {
+    const [[user]] = await db.execute("SELECT * FROM users WHERE userId = ?", [childId]);
+    const [[child]] = await db.execute("SELECT * FROM children WHERE childId = ?", [childId]);
+
+    if (!child || !user) {
       return res.status(404).json({ error: "Child not found." });
     }
 
-    if (req.body.email) {
+    const {
+      name = child.name,
+      dob = user.dob,
+      email = user.email,
+      gender = child.gender,
+      school = child.school,
+      grades = child.grades,
+      hobbies = child.hobbies,
+      dream_career = child.dream_career,
+      favourite_sports = child.favourite_sports,
+      blood_group = child.blood_group
+    } = req.body;
+
+    // If email is changed, check if taken
+    if (email !== user.email) {
       const [emailRows] = await db.execute(
         "SELECT * FROM users WHERE email = ? AND userId != ?",
-        [req.body.email, childId]
+        [email, childId]
       );
       if (emailRows.length > 0) {
         return res.status(400).json({ error: "Email already in use by another user." });
       }
     }
 
-    // 🔁 Update users
-    const userUpdates = [];
-    const userValues = [];
+    // Update users
+    await db.execute(
+      "UPDATE users SET name = ?, dob = ?, email = ?, type = ? WHERE userId = ?",
+      [name, dob, email, "child", childId]
+    );
 
-    for (const field of userFields) {
-      if (req.body[field] !== undefined) {
-        userUpdates.push(`${field} = ?`);
-        userValues.push(req.body[field]);
-      }
-    }
-
-    if (userUpdates.length > 0) {
-      userUpdates.push("type = ?");
-      userValues.push("child");
-      userValues.push(childId);
-
-      await db.execute(
-        `UPDATE users SET ${userUpdates.join(", ")} WHERE userId = ?`,
-        userValues
-      );
-    }
-
-    // 🔁 Update children
-    const childUpdates = [];
-    const childValues = [];
-
-    for (const field of childFields) {
-      if (req.body[field] !== undefined) {
-        childUpdates.push(`${field} = ?`);
-        childValues.push(req.body[field]);
-      }
-    }
-
-    if (childUpdates.length > 0) {
-      childValues.push(childId);
-      await db.execute(
-        `UPDATE children SET ${childUpdates.join(", ")} WHERE childId = ?`,
-        childValues
-      );
-    }
+    // Update children
+    await db.execute(
+      `UPDATE children SET 
+        name = ?, gender = ?, school = ?, grades = ?, hobbies = ?, 
+        dream_career = ?, favourite_sports = ?, blood_group = ?
+      WHERE childId = ?`,
+      [
+        name,
+        gender,
+        school,
+        grades,
+        hobbies,
+        dream_career,
+        favourite_sports,
+        blood_group,
+        childId
+      ]
+    );
 
     const [updatedUser] = await db.execute("SELECT * FROM users WHERE userId = ?", [childId]);
     const [updatedChild] = await db.execute("SELECT * FROM children WHERE childId = ?", [childId]);
@@ -298,6 +301,7 @@ exports.updateChild = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 

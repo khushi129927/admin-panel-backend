@@ -149,6 +149,7 @@ exports.updateParent = async (req, res) => {
     name,
     dob,
     email,
+    password,
     gender,
     education,
     profession,
@@ -157,61 +158,61 @@ exports.updateParent = async (req, res) => {
   } = req.body;
 
   const userId = req.params.id;
-
   if (!userId) {
     return res.status(400).json({ error: "User ID is required in params." });
   }
 
   try {
-    // Step 1: Fetch existing user (must be a parent)
-    const [existingRows] = await db.execute(
-      `SELECT * FROM users WHERE userId = ? AND type = ?`,
-      [userId, 'parent']
-    );
-
-    if (existingRows.length === 0) {
+    // Fetch existing user data
+    const [userRows] = await db.execute("SELECT * FROM users WHERE userId = ? AND type = ?", [userId, 'parent']);
+    if (userRows.length === 0) {
       return res.status(403).json({ error: "Invalid user or not a parent." });
     }
 
-    const existing = existingRows[0];
+    const existingUser = userRows[0];
 
-    // Step 2: Check if the new email is used by another user (only if email is being changed)
-    if (email && email !== existing.email) {
-      const [emailRows] = await db.execute(
-        `SELECT * FROM users WHERE email = ? AND userId != ?`,
-        [email, userId]
-      );
+    // Check if email changed and is already in use
+    if (email && email !== existingUser.email) {
+      const [emailRows] = await db.execute("SELECT * FROM users WHERE email = ? AND userId != ?", [email, userId]);
       if (emailRows.length > 0) {
         return res.status(400).json({ error: "Email already in use by another account." });
       }
     }
 
-    // Step 3: Safe fallback for undefined or empty string
-    const safe = (v, fallback) => (v === undefined || v === "") ? fallback : v;
+    // Determine final values
+    const finalName = name === undefined || name === "" ? existingUser.name : name;
+    const finalDob = dob === undefined || dob === "" ? existingUser.dob : dob;
+    const finalEmail = email === undefined || email === "" ? existingUser.email : email;
+    const finalGender = gender === undefined || gender === "" ? existingUser.gender : gender;
+    const finalEducation = education === undefined || education === "" ? existingUser.education : education;
+    const finalProfession = profession === undefined || profession === "" ? existingUser.profession : profession;
+    const finalHobbies = hobbies === undefined || hobbies === "" ? existingUser.hobbies : hobbies;
+    const finalFavFood = favourite_food === undefined || favourite_food === "" ? existingUser.favourite_food : favourite_food;
+    const finalPassword = password ? await bcrypt.hash(password, 10) : existingUser.password;
 
-    // Step 4: Update with fallback to existing values
+    // Update users table
     await db.execute(
       `UPDATE users SET 
         name = ?, dob = ?, email = ?, gender = ?, education = ?, 
-        profession = ?, hobbies = ?, favourite_food = ?, type = ?
+        profession = ?, hobbies = ?, favourite_food = ?, password = ?, type = ?
       WHERE userId = ?`,
       [
-        safe(name, existing.name),
-        safe(dob, existing.dob),
-        safe(email, existing.email),
-        safe(gender, existing.gender),
-        safe(education, existing.education),
-        safe(profession, existing.profession),
-        safe(hobbies, existing.hobbies),
-        safe(favourite_food, existing.favourite_food),
+        finalName,
+        finalDob,
+        finalEmail,
+        finalGender,
+        finalEducation,
+        finalProfession,
+        finalHobbies,
+        finalFavFood,
+        finalPassword,
         'parent',
         userId
       ]
     );
 
-    // ✅ Fetch updated data
+    // Fetch and return updated parent
     const [updatedParent] = await db.execute("SELECT * FROM users WHERE userId = ?", [userId]);
-
     res.json({
       success: true,
       parent: updatedParent[0]

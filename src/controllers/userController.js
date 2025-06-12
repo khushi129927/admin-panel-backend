@@ -145,6 +145,17 @@ exports.createChild = async (req, res) => {
 
 // 🔁 Update Parent
 exports.updateParent = async (req, res) => {
+  const {
+    name,
+    dob,
+    email,
+    gender,
+    education,
+    profession,
+    hobbies,
+    favourite_food
+  } = req.body;
+
   const userId = req.params.id;
 
   if (!userId) {
@@ -152,30 +163,20 @@ exports.updateParent = async (req, res) => {
   }
 
   try {
-    const [userRows] = await db.execute(
-      `SELECT * FROM users WHERE userId = ? AND type = 'parent'`,
-      [userId]
+    // Step 1: Fetch existing user (must be a parent)
+    const [existingRows] = await db.execute(
+      `SELECT * FROM users WHERE userId = ? AND type = ?`,
+      [userId, 'parent']
     );
 
-    if (userRows.length === 0) {
+    if (existingRows.length === 0) {
       return res.status(403).json({ error: "Invalid user or not a parent." });
     }
 
-    const existing = userRows[0];
+    const existing = existingRows[0];
 
-    const {
-      name = existing.name,
-      dob = existing.dob,
-      email = existing.email,
-      gender = existing.gender,
-      education = existing.education,
-      profession = existing.profession,
-      hobbies = existing.hobbies,
-      favourite_food = existing.favourite_food
-    } = req.body;
-
-    // If user changed email, check for uniqueness
-    if (email !== existing.email) {
+    // Step 2: Check if the new email is used by another user (only if email is being changed)
+    if (email && email !== existing.email) {
       const [emailRows] = await db.execute(
         `SELECT * FROM users WHERE email = ? AND userId != ?`,
         [email, userId]
@@ -185,25 +186,30 @@ exports.updateParent = async (req, res) => {
       }
     }
 
+    // Step 3: Safe fallback for undefined or empty string
+    const safe = (v, fallback) => (v === undefined || v === "") ? fallback : v;
+
+    // Step 4: Update with fallback to existing values
     await db.execute(
       `UPDATE users SET 
         name = ?, dob = ?, email = ?, gender = ?, education = ?, 
         profession = ?, hobbies = ?, favourite_food = ?, type = ?
       WHERE userId = ?`,
       [
-        name,
-        dob,
-        email,
-        gender,
-        education,
-        profession,
-        hobbies,
-        favourite_food,
+        safe(name, existing.name),
+        safe(dob, existing.dob),
+        safe(email, existing.email),
+        safe(gender, existing.gender),
+        safe(education, existing.education),
+        safe(profession, existing.profession),
+        safe(hobbies, existing.hobbies),
+        safe(favourite_food, existing.favourite_food),
         'parent',
         userId
       ]
     );
 
+    // ✅ Fetch updated data
     const [updatedParent] = await db.execute("SELECT * FROM users WHERE userId = ?", [userId]);
 
     res.json({
@@ -223,6 +229,19 @@ exports.updateParent = async (req, res) => {
 
 // 🔁 Update Child
 exports.updateChild = async (req, res) => {
+  const {
+    name,
+    dob,
+    email,
+    gender,
+    school,
+    grades,
+    hobbies,
+    dream_career,
+    favourite_sports,
+    blood_group,
+  } = req.body;
+
   const childId = req.params.childId;
 
   if (!childId) {
@@ -230,28 +249,22 @@ exports.updateChild = async (req, res) => {
   }
 
   try {
-    const [[user]] = await db.execute("SELECT * FROM users WHERE userId = ?", [childId]);
-    const [[child]] = await db.execute("SELECT * FROM children WHERE childId = ?", [childId]);
-
-    if (!child || !user) {
+    // Step 1: Get existing child data
+    const [childRows] = await db.execute("SELECT * FROM children WHERE childId = ?", [childId]);
+    if (childRows.length === 0) {
       return res.status(404).json({ error: "Child not found." });
     }
 
-    const {
-      name = child.name,
-      dob = user.dob,
-      email = user.email,
-      gender = child.gender,
-      school = child.school,
-      grades = child.grades,
-      hobbies = child.hobbies,
-      dream_career = child.dream_career,
-      favourite_sports = child.favourite_sports,
-      blood_group = child.blood_group
-    } = req.body;
+    const [userRows] = await db.execute("SELECT * FROM users WHERE userId = ?", [childId]);
+    if (userRows.length === 0) {
+      return res.status(404).json({ error: "Child's user entry not found." });
+    }
 
-    // If email is changed, check if taken
-    if (email !== user.email) {
+    const existingChild = childRows[0];
+    const existingUser = userRows[0];
+
+    // Step 2: If email is changing, ensure it's not used elsewhere
+    if (email && email !== existingUser.email) {
       const [emailRows] = await db.execute(
         "SELECT * FROM users WHERE email = ? AND userId != ?",
         [email, childId]
@@ -261,31 +274,40 @@ exports.updateChild = async (req, res) => {
       }
     }
 
-    // Update users
+    const safe = (v, fallback) => (v === undefined || v === "") ? fallback : v;
+
+    // Step 3: Update users table (if exists)
     await db.execute(
       "UPDATE users SET name = ?, dob = ?, email = ?, type = ? WHERE userId = ?",
-      [name, dob, email, "child", childId]
+      [
+        safe(name, existingUser.name),
+        safe(dob, existingUser.dob),
+        safe(email, existingUser.email),
+        "child",
+        childId
+      ]
     );
 
-    // Update children
+    // Step 4: Update children table
     await db.execute(
       `UPDATE children SET 
         name = ?, gender = ?, school = ?, grades = ?, hobbies = ?, 
         dream_career = ?, favourite_sports = ?, blood_group = ?
       WHERE childId = ?`,
       [
-        name,
-        gender,
-        school,
-        grades,
-        hobbies,
-        dream_career,
-        favourite_sports,
-        blood_group,
+        safe(name, existingChild.name),
+        safe(gender, existingChild.gender),
+        safe(school, existingChild.school),
+        safe(grades, existingChild.grades),
+        safe(hobbies, existingChild.hobbies),
+        safe(dream_career, existingChild.dream_career),
+        safe(favourite_sports, existingChild.favourite_sports),
+        safe(blood_group, existingChild.blood_group),
         childId
       ]
     );
 
+    // Step 5: Fetch updated data
     const [updatedUser] = await db.execute("SELECT * FROM users WHERE userId = ?", [childId]);
     const [updatedChild] = await db.execute("SELECT * FROM children WHERE childId = ?", [childId]);
 
@@ -301,6 +323,7 @@ exports.updateChild = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 

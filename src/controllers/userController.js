@@ -145,18 +145,10 @@ exports.createChild = async (req, res) => {
 
 // 🔁 Update Parent
 exports.updateParent = async (req, res) => {
-  const {
-    name,
-    dob,
-    email,
-    gender,
-    education,
-    profession,
-    hobbies,
-    favourite_food
-  } = req.body;
-
-  const safe = (v) => v === undefined ? null : v;
+  const fields = [
+    "name", "dob", "email", "gender",
+    "education", "profession", "hobbies", "favourite_food"
+  ];
   const userId = req.params.id;
 
   if (!userId) {
@@ -164,47 +156,47 @@ exports.updateParent = async (req, res) => {
   }
 
   try {
-    // Step 1: Ensure the user exists and is a parent
     const [userRows] = await db.execute(
       `SELECT * FROM users WHERE userId = ? AND type = ?`,
       [userId, 'parent']
     );
-
     if (userRows.length === 0) {
       return res.status(403).json({ error: "Invalid user or not a parent." });
     }
 
-    // Step 2: Check if the new email is used by another user
-    const [emailRows] = await db.execute(
-      `SELECT * FROM users WHERE email = ? AND userId != ?`,
-      [email, userId]
-    );
-
-    if (emailRows.length > 0) {
-      return res.status(400).json({ error: "Email already in use by another account." });
+    if (req.body.email) {
+      const [emailRows] = await db.execute(
+        `SELECT * FROM users WHERE email = ? AND userId != ?`,
+        [req.body.email, userId]
+      );
+      if (emailRows.length > 0) {
+        return res.status(400).json({ error: "Email already in use by another account." });
+      }
     }
 
-    // Step 3: Proceed with the update
+    const updates = [];
+    const values = [];
+
+    for (const field of fields) {
+      if (req.body[field] !== undefined) {
+        updates.push(`${field} = ?`);
+        values.push(req.body[field]);
+      }
+    }
+
+    if (updates.length === 0) {
+      return res.status(400).json({ error: "No valid fields provided for update." });
+    }
+
+    updates.push("type = ?");
+    values.push("parent");
+    values.push(userId);
+
     await db.execute(
-      `UPDATE users SET 
-        name = ?, dob = ?, email = ?, gender = ?, education = ?, 
-        profession = ?, hobbies = ?, favourite_food = ?, type = ?
-      WHERE userId = ?`,
-      [
-        safe(name),
-        safe(dob),
-        safe(email),
-        safe(gender),
-        safe(education),
-        safe(profession),
-        safe(hobbies),
-        safe(favourite_food),
-        'parent',
-        userId
-      ]
+      `UPDATE users SET ${updates.join(", ")} WHERE userId = ?`,
+      values
     );
 
-    // ✅ Step 4: Fetch updated data
     const [updatedParent] = await db.execute("SELECT * FROM users WHERE userId = ?", [userId]);
 
     res.json({
@@ -220,21 +212,14 @@ exports.updateParent = async (req, res) => {
 
 
 
+
 // 🔁 Update Child
 exports.updateChild = async (req, res) => {
-  const {
-    name,
-    dob,
-    email,
-    gender,
-    school,
-    grades,
-    hobbies,
-    dream_career,
-    favourite_sports,
-    blood_group,
-  } = req.body;
-
+  const userFields = ["name", "dob", "email"];
+  const childFields = [
+    "name", "gender", "school", "grades", "hobbies",
+    "dream_career", "favourite_sports", "blood_group"
+  ];
   const childId = req.params.childId;
 
   if (!childId) {
@@ -242,52 +227,62 @@ exports.updateChild = async (req, res) => {
   }
 
   try {
-    // Step 1: Check if child exists
-    const [childRows] = await db.execute(
-      "SELECT * FROM children WHERE childId = ?",
-      [childId]
-    );
-
+    const [childRows] = await db.execute("SELECT * FROM children WHERE childId = ?", [childId]);
     if (childRows.length === 0) {
       return res.status(404).json({ error: "Child not found." });
     }
 
-    // Step 2: Check if email already exists for another user
-    const [emailRows] = await db.execute(
-      "SELECT * FROM users WHERE email = ? AND userId != ?",
-      [email, childId]
-    );
-
-    if (emailRows.length > 0) {
-      return res.status(400).json({ error: "Email already in use by another user." });
+    if (req.body.email) {
+      const [emailRows] = await db.execute(
+        "SELECT * FROM users WHERE email = ? AND userId != ?",
+        [req.body.email, childId]
+      );
+      if (emailRows.length > 0) {
+        return res.status(400).json({ error: "Email already in use by another user." });
+      }
     }
 
-    // Step 3: Update users table
-    await db.execute(
-      "UPDATE users SET name = ?, dob = ?, email = ?, type = ? WHERE userId = ?",
-      [name, dob, email, "child", childId]
-    );
+    // 🔁 Update users
+    const userUpdates = [];
+    const userValues = [];
 
-    // Step 4: Update children table
-    await db.execute(
-      `UPDATE children SET 
-        name = ?, gender = ?, school = ?, grades = ?, hobbies = ?, 
-        dream_career = ?, favourite_sports = ?, blood_group = ?
-      WHERE childId = ?`,
-      [
-        name,
-        gender,
-        school,
-        grades,
-        hobbies,
-        dream_career,
-        favourite_sports,
-        blood_group,
-        childId
-      ]
-    );
+    for (const field of userFields) {
+      if (req.body[field] !== undefined) {
+        userUpdates.push(`${field} = ?`);
+        userValues.push(req.body[field]);
+      }
+    }
 
-    // ✅ Step 5: Fetch updated data from DB
+    if (userUpdates.length > 0) {
+      userUpdates.push("type = ?");
+      userValues.push("child");
+      userValues.push(childId);
+
+      await db.execute(
+        `UPDATE users SET ${userUpdates.join(", ")} WHERE userId = ?`,
+        userValues
+      );
+    }
+
+    // 🔁 Update children
+    const childUpdates = [];
+    const childValues = [];
+
+    for (const field of childFields) {
+      if (req.body[field] !== undefined) {
+        childUpdates.push(`${field} = ?`);
+        childValues.push(req.body[field]);
+      }
+    }
+
+    if (childUpdates.length > 0) {
+      childValues.push(childId);
+      await db.execute(
+        `UPDATE children SET ${childUpdates.join(", ")} WHERE childId = ?`,
+        childValues
+      );
+    }
+
     const [updatedUser] = await db.execute("SELECT * FROM users WHERE userId = ?", [childId]);
     const [updatedChild] = await db.execute("SELECT * FROM children WHERE childId = ?", [childId]);
 
@@ -303,6 +298,7 @@ exports.updateChild = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 
 

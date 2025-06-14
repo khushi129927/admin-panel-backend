@@ -8,8 +8,8 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: "ganeshbirale87@gmail.com", // replace with your Hostinger email
-    pass: "*Neuroeq#"        // use the mailbox password
+    user: process.env.MAIL_USER, // replace with your Hostinger email
+    pass: process.env.MAIL_PASS       // use the mailbox password
   }
 });
 
@@ -31,7 +31,7 @@ exports.sendOtp = async (req, res) => {
 
     // Send OTP email
     await transporter.sendMail({
-      from: '"Your App Name" <your-email@yourdomain.com>',
+      from: '"NeuroEQ" <contact@neuroeq.in>',
       to: email,
       subject: "Your OTP Code",
       text: `Your OTP code is ${otpCode}. It will expire in 5 minutes.`

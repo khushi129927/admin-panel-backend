@@ -8,8 +8,8 @@ const transporter = nodemailer.createTransport({
   port: 465,
   secure: true,
   auth: {
-    user: process.env.MAIL_USER, // replace with your Hostinger email
-    pass: process.env.MAIL_PASS       // use the mailbox password
+    user: process.env.MAIL_USER,
+    pass: process.env.MAIL_PASS      // use the mailbox password
   }
 });
 

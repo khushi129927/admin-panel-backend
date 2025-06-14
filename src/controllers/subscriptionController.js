@@ -13,10 +13,14 @@ exports.createSubscription = async (req, res) => {
   try {
     const { userId, plan_id, customer_email, customer_contact } = req.body;
     const subscription = await razorpay.subscriptions.create({
-      plan_id,
-      customer_notify: 1,
-      total_count: 12,
-    });
+  plan_id,
+  customer_notify: 1,
+  total_count: 12,
+  customer: {
+    email: customer_email
+  }
+});
+
 
     const subscriptionId = uuidv4();
     const sql = "INSERT INTO subscriptions (subscriptionId, userId, plan, status, razorpay_subscription_id) VALUES (?, ?, ?, ?, ?)";

@@ -1,10 +1,12 @@
 const nodemailer = require("nodemailer");
 
 const transporter = nodemailer.createTransport({
-  service: "gmail",
+  host: "smtp.hostinger.com",
+  port: 465,
+  secure: true,
   auth: {
-    user: process.env.MAIL_USER,       // your Gmail
-    pass: process.env.MAIL_PASS        // app-specific password
+    user: process.env.MAIL_USER, // your Hostinger email
+    pass: process.env.MAIL_PASS  // your Hostinger email password
   }
 });
 
@@ -15,5 +17,6 @@ exports.sendOTP = async (email, otp) => {
     subject: "Your Verification Code",
     html: `<p>Your OTP code is <b>${otp}</b>. It will expire in 10 minutes.</p>`
   };
+
   await transporter.sendMail(mailOptions);
 };

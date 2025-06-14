@@ -52,6 +52,7 @@ app.use("/api/analytics", require("./src/routes/analyticsRoute"));
 app.use("/api/misc", require("./src/routes/miscRoute"));
 app.use("/api/leaderboard", require("./src/routes/leaderboardRoute"));
 app.use("/api/auth", require("./src/routes/authRoute"));
+app.use("/api/otp", require("./src/routes/otpRoute"));
 
 // ✅ Catch-All Route for React SPA
 app.get("*", (req, res) => {

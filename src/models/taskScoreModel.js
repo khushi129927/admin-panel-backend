@@ -43,6 +43,7 @@ const getScoresByUser = async (userId) => {
   return rows;
 };
 
+
 // 🔁 Initialize on import
 createTaskScoresTable();
 

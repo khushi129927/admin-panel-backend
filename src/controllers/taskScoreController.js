@@ -3,43 +3,41 @@ const { v4: uuidv4 } = require("uuid");
 
 exports.submitTaskScore = async (req, res) => {
   const { userId, taskId, task_owner, answers } = req.body;
-  const taskScoreId = uuidv4();
 
   try {
     // Fetch the task details
     const [taskResult] = await db.query("SELECT * FROM task WHERE taskId = ?", [taskId]);
-    const task = taskResult[0];
-
-    if (!task) {
+    if (!taskResult.length) {
       return res.status(404).json({ error: "Task not found." });
     }
 
-    // Compare task owner (case-insensitive, trimmed)
-    const dbOwner = task.task_owner.toLowerCase().trim();
-    const reqOwner = task_owner.toLowerCase().trim();
-    if (!dbOwner.includes(reqOwner)) {
-      return res.status(400).json({ error: `This task does not belong to ${task_owner}.` });
+    const task = taskResult[0];
+
+    // Validate task ownership
+    if (!task.task_owner || !task.task_owner.toLowerCase().includes(task_owner.toLowerCase())) {
+      return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
     }
 
-    // Calculate score from the selected answers
+    // Calculate score from selected answers
     let totalScore = 0;
+    ["mcq1", "mcq2", "mcq3"].forEach((key) => {
+      const selectedOptionKey = answers[key]; // e.g., "mcq1_opt3"
+      const selectedText = task[selectedOptionKey]; // e.g., "Understood partially (8/10)"
 
-    ["mcq1", "mcq2", "mcq3"].forEach((q) => {
-      const selectedOptionKey = answers[q]; // e.g., "mcq1_opt3"
-      const selectedText = task[selectedOptionKey]; // e.g., "Related it well (10/10)"
       if (selectedText) {
-        const match = selectedText.match(/\((\d+)\/\d+\)/);
+        const match = selectedText.match(/\((\d+)\s*\/\s*\d+\)/); // Match score like (8/10)
         if (match) {
           totalScore += parseInt(match[1]);
         }
       }
     });
 
-    // Insert into task_scores table
+    // Save to task_scores table
+    const taskScoreId = uuidv4();
     await db.execute(
-      `INSERT INTO task_scores (
-        taskScoreId, userId, taskId, taskOwner, mcq1, mcq2, mcq3, totalScore, submitted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      `INSERT INTO task_scores 
+        (taskScoreId, userId, taskId, taskOwner, mcq1, mcq2, mcq3, totalScore, submitted_at) 
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         taskScoreId,
         userId,
@@ -48,7 +46,7 @@ exports.submitTaskScore = async (req, res) => {
         answers.mcq1,
         answers.mcq2,
         answers.mcq3,
-        totalScore,
+        totalScore
       ]
     );
 

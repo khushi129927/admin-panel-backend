@@ -79,16 +79,23 @@ exports.getTests = async (req, res) => {
 
 exports.getTestsByAge = async (req, res) => {
   try {
+    // Normalize input age to use standard hyphen
+    const inputAge = req.params.age.replace(/–/g, "-");
+
+    // Query replacing en dash with hyphen in DB field as well
     const [results] = await db.execute(
-      "SELECT * FROM tests WHERE age = ? ORDER BY created_at DESC",
-      [req.params.age]
+      "SELECT * FROM tests WHERE REPLACE(age, '–', '-') = ? ORDER BY created_at DESC",
+      [inputAge]
     );
+
     res.status(200).json({ success: true, data: results });
   } catch (error) {
-    console.error("❌ Get Tests by Age Error:", error.message);
+    console.error("❌ Get Tests Error:", error.message);
+    console.error(error.stack);
     res.status(500).json({ error: "Failed to get test questions." });
   }
 };
+
 
 exports.getTestsByQuarterOnly = async (req, res) => {
   try {
@@ -104,15 +111,19 @@ exports.getTestsByQuarterOnly = async (req, res) => {
 };
 
 exports.getTestsByAgeAndQuarter = async (req, res) => {
-  const { age, quarter } = req.query;
+  let { age, quarter } = req.query;
 
   if (!age || !quarter) {
     return res.status(400).json({ error: "Both age and quarter are required." });
   }
 
+  // Normalize input
+  age = age.replace(/–/g, "-");
+  quarter = quarter.replace(/–/g, "-");
+
   try {
     const [results] = await db.execute(
-      "SELECT * FROM tests WHERE age = ? AND quarter = ? ORDER BY created_at DESC",
+      "SELECT * FROM tests WHERE REPLACE(age, '–', '-') = ? AND REPLACE(quarter, '–', '-') = ? ORDER BY created_at DESC",
       [age, quarter]
     );
 
@@ -126,4 +137,3 @@ exports.getTestsByAgeAndQuarter = async (req, res) => {
     res.status(500).json({ error: "Failed to get test questions." });
   }
 };
-

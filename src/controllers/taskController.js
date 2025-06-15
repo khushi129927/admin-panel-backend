@@ -47,10 +47,9 @@ exports.getTask = async (req, res) => {
   }
 };
 
-// 📦 Get Task by ID
-exports.getTaskById = async (req, res) => {
+exports.getTaskByWeek = async (req, res) => {
   try {
-    const [task] = await db.query("SELECT * FROM task WHERE taskId = ?", [req.params.taskId]);
+    const [task] = await db.query("SELECT * FROM task WHERE week = ?", [req.params.week]);
     if (!task.length) return res.status(404).json({ error: "Task not found." });
     res.json({ success: true, task: task[0] });
   } catch (err) {

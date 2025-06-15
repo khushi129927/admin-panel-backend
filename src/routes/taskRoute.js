@@ -7,7 +7,7 @@ const router = express.Router();
 // ✅ Routes
 router.get("/get-all", getTask);
 router.post("/upload", uploadTask);
-router.get("/get/:week", getTasksByWeek);          // GET single task
+router.get("/get/week/:week", getTasksByWeek);          // GET single task
 router.post("/assign", assignTaskToUser);     // POST assign
 router.put("/status/:taskId", updateTaskStatus);  // PUT status update
 router.get("/weekly/:userId", getWeeklyTasksForUser); // Weekly tasks

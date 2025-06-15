@@ -49,11 +49,11 @@ exports.getTask = async (req, res) => {
 
 exports.getTasksByWeek = async (req, res) => {
   try {
-    const weekNumber = req.params.week; // expecting only number like "1", "2", etc.
-    const weekPattern = `Week ${weekNumber}%`; // match anything like "Week 1", "Week 1 - Reading", etc.
+    const weekNumber = req.params.week; // just the number like "56"
+    const weekPattern = `Week ${weekNumber}%`;
 
     const [results] = await db.query(
-      "SELECT * FROM task WHERE week LIKE ? ORDER BY task_owner",
+      "SELECT * FROM task WHERE week LIKE ? ORDER BY week ASC, task_owner ASC",
       [weekPattern]
     );
 

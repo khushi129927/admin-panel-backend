@@ -111,7 +111,7 @@ exports.getTestsByQuarterOnly = async (req, res) => {
 };
 
 exports.getTestsByAgeAndQuarter = async (req, res) => {
-  let { age, quarter } = req.query;
+  let { age, quarter } = req.body;
 
   if (!age || !quarter) {
     return res.status(400).json({ error: "Both age and quarter are required." });

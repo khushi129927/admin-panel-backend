@@ -3,14 +3,14 @@ const { v4: uuidv4 } = require("uuid");
 const TaskScore = require("../models/taskScoreModel");
 
 exports.submitTaskScore = async (req, res) => {
-  const { taskId, userId, answers, taskOwner } = req.body;
+  const { taskId, userId, answers, task_owner } = req.body;
 
   const validOwners = ["mother", "father", "combined"];
-  if (!taskId || !userId || typeof answers !== "object" || !taskOwner) {
-    return res.status(400).json({ error: "taskId, userId, taskOwner, and answers are required." });
+  if (!taskId || !userId || typeof answers !== "object" || !task_owner) {
+    return res.status(400).json({ error: "taskId, userId, task_owner, and answers are required." });
   }
 
-  if (!validOwners.includes(taskOwner.toLowerCase())) {
+  if (!validOwners.includes(task_owner.toLowerCase())) {
     return res.status(400).json({ error: "taskOwner must be 'mother', 'father', or 'combined'." });
   }
 
@@ -21,8 +21,8 @@ exports.submitTaskScore = async (req, res) => {
     const task = taskRows[0];
 
     // Check that the task belongs to the correct owner
-    if (task.task_owner.toLowerCase() !== taskOwner.toLowerCase()) {
-      return res.status(403).json({ error: `This task does not belong to ${taskOwner}.` });
+    if (task.task_owner.toLowerCase() !== task_owner.toLowerCase()) {
+      return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
     }
 
     let score = 0;

@@ -60,9 +60,9 @@ app.use("/api/testScore", require("./src/routes/testScoreRoute"));
 app.use("/api/taskScore", require("./src/routes/taskScoreRoute"));
 
 // ✅ Catch-All Route for React SPA
-app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "admin-panel-frontend", "build", "index.html"));
-});
+//app.get("*", (req, res) => {
+ // res.sendFile(path.join(__dirname, "admin-panel-frontend", "build", "index.html"));
+//});
 
 // ✅ Global Error Handler
 app.use((err, req, res, next) => {

@@ -1,3 +1,5 @@
+const db = require("../config/db"); // <-- This is missing
+
 // ✅ controllers/taskScoreController.js
 const { v4: uuidv4 } = require("uuid");
 const TaskScore = require("../models/taskScoreModel");

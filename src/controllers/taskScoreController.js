@@ -1,6 +1,4 @@
-const db = require("../config/db"); // <-- This is missing
-
-// ✅ controllers/taskScoreController.js
+const db = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 const TaskScore = require("../models/taskScoreModel");
 
@@ -12,17 +10,17 @@ exports.submitTaskScore = async (req, res) => {
   }
 
   try {
-    // 1. Fetch task's correct answers
+    // 1. Fetch task
     const [taskRows] = await db.execute("SELECT * FROM task WHERE taskId = ?", [taskId]);
     if (!taskRows.length) return res.status(404).json({ error: "Task not found." });
     
     const task = taskRows[0];
 
-    // 2. Compare answers
+    // 2. Calculate score dynamically
     let score = 0;
-    if (task.mcq1 && answers.mcq1 && answers.mcq1 === task.mcq1) score += 1;
-    if (task.mcq2 && answers.mcq2 && answers.mcq2 === task.mcq2) score += 1;
-    if (task.mcq3 && answers.mcq3 && answers.mcq3 === task.mcq3) score += 1;
+    if (answers.mcq1 && task[answers.mcq1]) score += Number(task[answers.mcq1]) || 0;
+    if (answers.mcq2 && task[answers.mcq2]) score += Number(task[answers.mcq2]) || 0;
+    if (answers.mcq3 && task[answers.mcq3]) score += Number(task[answers.mcq3]) || 0;
 
     // 3. Save score
     const scoreId = uuidv4();
@@ -34,6 +32,7 @@ exports.submitTaskScore = async (req, res) => {
     res.status(500).json({ error: "Failed to submit task score." });
   }
 };
+
 
 
 exports.getUserTaskScores = async (req, res) => {

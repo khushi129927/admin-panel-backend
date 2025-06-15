@@ -1,58 +1,55 @@
+// controllers/taskScoreController.js
 const db = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 
 exports.submitTaskScore = async (req, res) => {
   const { userId, taskId, task_owner, answers } = req.body;
+  console.log("Request payload:", req.body);
 
   try {
-    // Fetch the task details
-    const [taskResult] = await db.query("SELECT * FROM task WHERE taskId = ?", [taskId]);
-    if (!taskResult.length) {
+    const [taskRows] = await db.query("SELECT * FROM task WHERE taskId = ?", [taskId]);
+    console.log("Fetched task rows:", taskRows);
+
+    if (!taskRows.length) {
       return res.status(404).json({ error: "Task not found." });
     }
 
-    const task = taskResult[0];
+    const task = taskRows[0];
+    console.log("Task owner in DB:", task.task_owner);
 
-    // Validate task ownership
     if (!task.task_owner || !task.task_owner.toLowerCase().includes(task_owner.toLowerCase())) {
-      return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
+      return res.status(400).json({ error: `This task does not belong to ${task_owner}.` });
     }
 
-    // Calculate score from selected answers
     let totalScore = 0;
-    ["mcq1", "mcq2", "mcq3"].forEach((key) => {
-      const selectedOptionKey = answers[key]; // e.g., "mcq1_opt3"
-      const selectedText = task[selectedOptionKey]; // e.g., "Understood partially (8/10)"
 
-      if (selectedText) {
-        const match = selectedText.match(/\((\d+)\s*\/\s*\d+\)/); // Match score like (8/10)
-        if (match) {
-          totalScore += parseInt(match[1]);
-        }
+    for (const key of ["mcq1", "mcq2", "mcq3"]) {
+      const optKey = answers[key];
+      const optText = task[optKey];
+      console.log(`Answer [${key}]:`, optKey, "=>", optText);
+
+      if (!optText) continue;
+      const match = optText.match(/\((\d+)\s*\/\s*\d+\)/);
+      console.log(`Score extracted for ${optKey}:`, match ? match[1] : "no match");
+
+      if (match) {
+        totalScore += parseInt(match[1]);
       }
-    });
+    }
 
-    // Save to task_scores table
+    console.log("Total score calculated:", totalScore);
+
     const taskScoreId = uuidv4();
     await db.execute(
       `INSERT INTO task_scores 
         (taskScoreId, userId, taskId, taskOwner, mcq1, mcq2, mcq3, totalScore, submitted_at) 
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [
-        taskScoreId,
-        userId,
-        taskId,
-        task_owner,
-        answers.mcq1,
-        answers.mcq2,
-        answers.mcq3,
-        totalScore
-      ]
+      [taskScoreId, userId, taskId, task_owner, answers.mcq1, answers.mcq2, answers.mcq3, totalScore]
     );
 
     res.status(201).json({ success: true, totalScore });
   } catch (err) {
-    console.error("Error in submitTaskScore:", err.message);
+    console.error("Error in submitTaskScore:", err);
     res.status(500).json({ error: "Failed to submit task score." });
   }
 };

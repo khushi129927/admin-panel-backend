@@ -98,22 +98,39 @@ exports.getPaymentHistory = async (req, res) => {
 };
 
 // ✅ 6. Verify Subscription Payment
+// ✅ 6. Verify Subscription Payment
 exports.verifySubscriptionPayment = async (req, res) => {
-  try {
-    // For Razorpay signature verification
-    const crypto = require("crypto");
-    const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature } = req.body;
+  const crypto = require("crypto");
+  const db = require("../config/db");
+  const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, userId, amount } = req.body;
 
+  try {
     const generated_signature = crypto
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(razorpay_payment_id + "|" + razorpay_subscription_id)
       .digest("hex");
 
-    if (generated_signature === razorpay_signature) {
-      return res.status(200).json({ success: true, message: "Payment verified" });
-    } else {
+    if (generated_signature !== razorpay_signature) {
       return res.status(400).json({ success: false, message: "Invalid signature" });
     }
+
+    // Insert into payments table
+    const sql = `
+      INSERT INTO payments (paymentId, userId, amount, razorpay_payment_id, razorpay_subscription_id, razorpay_signature, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    const paymentId = razorpay_payment_id; // or uuid if you prefer
+    await db.execute(sql, [
+      paymentId,
+      userId,
+      amount,
+      razorpay_payment_id,
+      razorpay_subscription_id,
+      razorpay_signature,
+      "paid"
+    ]);
+
+    return res.status(200).json({ success: true, message: "Payment verified and stored" });
   } catch (err) {
     console.error("❌ Payment verification error:", err);
     res.status(500).json({ error: "Internal Server Error" });

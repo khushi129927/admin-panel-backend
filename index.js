@@ -21,6 +21,7 @@ require("./src/models/termsModel");
 require("./src/models/locationModel");
 require("./src/models/reviewsModel");
 require("./src/models/otpModel");
+require("./src/models/paymentsModel");
 
 // ✅ CORS: Allow local & tools like Postman
 const allowedOrigins = ["http://localhost:3000", undefined];

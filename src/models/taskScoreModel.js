@@ -1,6 +1,7 @@
 // ✅ models/taskScoreModel.js
 const db = require("../config/db");
 
+// 📦 Create Table
 const createTaskScoresTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS task_scores (
@@ -23,25 +24,27 @@ const createTaskScoresTable = async () => {
   }
 };
 
-const createTaskScore = async (scoreId, taskId, userId, score) => {
+// 📝 Insert New Score
+const createTaskScore = async (taskScoreId, taskId, userId, taskOwner, mcq1, mcq2, mcq3, totalScore) => {
   const [result] = await db.execute(
-    `INSERT INTO task_scores (scoreId, taskId, userId, score, created_at)
-     VALUES (?, ?, ?, ?, NOW())`,
-    [scoreId, taskId, userId, score]
+    `INSERT INTO task_scores (taskScoreId, taskId, userId, taskOwner, mcq1, mcq2, mcq3, totalScore, submitted_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [taskScoreId, taskId, userId, taskOwner, mcq1, mcq2, mcq3, totalScore]
   );
   return result;
 };
 
+// 📊 Get Scores by User
 const getScoresByUser = async (userId) => {
   const [rows] = await db.execute(
-    `SELECT * FROM task_scores WHERE userId = ? ORDER BY created_at DESC`,
+    `SELECT * FROM task_scores WHERE userId = ? ORDER BY submitted_at DESC`,
     [userId]
   );
   return rows;
 };
 
-// Run table initialization on import
-initializeTaskScoreTable();
+// 🔁 Initialize on import
+createTaskScoresTable();
 
 module.exports = {
   createTaskScore,

@@ -105,7 +105,7 @@ exports.verifySubscriptionPayment = async (req, res) => {
     const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature } = req.body;
 
     const generated_signature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_SECRET)
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
       .update(razorpay_payment_id + "|" + razorpay_subscription_id)
       .digest("hex");
 

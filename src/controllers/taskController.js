@@ -47,15 +47,19 @@ exports.getTask = async (req, res) => {
   }
 };
 
-exports.getTaskByWeek = async (req, res) => {
+exports.getTasksByWeek = async (req, res) => {
   try {
-    const [task] = await db.query("SELECT * FROM task WHERE week = ?", [req.params.week]);
-    if (!task.length) return res.status(404).json({ error: "Task not found." });
-    res.json({ success: true, task: task[0] });
+    const week = req.params.week; // should be like "Week 1"
+    const [results] = await db.query("SELECT * FROM task WHERE week = ? ORDER BY task_owner", [week]);
+
+    if (!results.length) return res.status(404).json({ success: false, message: "No tasks found for this week." });
+
+    res.status(200).json({ success: true, tasks: results }); // ✅ send all tasks, not just one
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch task." });
+    res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
+
 
 // 🎯 Assign Task to User
 exports.assignTaskToUser = async (req, res) => {

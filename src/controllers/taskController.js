@@ -40,7 +40,7 @@ exports.uploadTask = (req, res) => {
 // 📥 Get All Tasks
 exports.getTask = async (req, res) => {
   try {
-    const [results] = await db.query("SELECT * FROM task ORDER BY created_at DESC");
+    const [results] = await db.query("SELECT * FROM task ORDER BY created_at ASEC");
     res.status(200).json({ success: true, data: results });
   } catch {
     res.status(500).json({ error: "Failed to load tasks." });

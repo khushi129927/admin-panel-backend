@@ -9,19 +9,25 @@ const db = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 
 // ✅ 1. Create Razorpay Subscription
+// ✅ 1. Create Razorpay Subscription with Customer Creation
 exports.createSubscription = async (req, res) => {
   try {
-    const { userId, plan_id, customer_email, customer_contact } = req.body;
+    const { userId, plan_id, customer_email } = req.body;
+
+    // 🔹 Step 1: Create Razorpay Customer
+    const customer = await razorpay.customers.create({
+      email: customer_email
+    });
+
+    // 🔹 Step 2: Create Subscription using customer_id
     const subscription = await razorpay.subscriptions.create({
-  plan_id,
-  customer_notify: 1,
-  total_count: 12,
-  customer: {
-    email: customer_email
-  }
-});
+      plan_id,
+      customer_notify: 1,
+      total_count: 12,
+      customer_id: customer.id
+    });
 
-
+    // 🔹 Step 3: Save in your database
     const subscriptionId = uuidv4();
     const sql = "INSERT INTO subscriptions (subscriptionId, userId, plan, status, razorpay_subscription_id) VALUES (?, ?, ?, ?, ?)";
     await db.execute(sql, [
@@ -38,6 +44,7 @@ exports.createSubscription = async (req, res) => {
     res.status(500).json({ error: "Failed to create subscription", details: error.message });
   }
 };
+
 
 // ✅ 2. Get All Subscriptions
 exports.getSubscriptions = async (req, res) => {

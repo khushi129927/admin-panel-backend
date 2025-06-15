@@ -117,13 +117,12 @@ exports.getTestsByAgeAndQuarter = async (req, res) => {
     return res.status(400).json({ error: "Both age and quarter are required." });
   }
 
-  // Normalize input
+  // Normalize only age
   age = age.replace(/–/g, "-");
-  quarter = quarter.replace(/–/g, "-");
 
   try {
     const [results] = await db.execute(
-      "SELECT * FROM tests WHERE REPLACE(age, '–', '-') = ? AND REPLACE(quarter, '–', '-') = ? ORDER BY created_at DESC",
+      "SELECT * FROM tests WHERE REPLACE(age, '–', '-') = ? AND quarter = ? ORDER BY created_at DESC",
       [age, quarter]
     );
 

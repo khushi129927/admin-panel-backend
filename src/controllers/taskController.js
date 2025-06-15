@@ -120,10 +120,11 @@ exports.submitFeedback = async (req, res) => {
     await db.execute(
       `INSERT INTO task_feedback (taskFeedbackId, taskId, userId, feedback, rating, created_at)
        VALUES (?, ?, ?, ?, ?, NOW())`,
-      [taskFeedbackId, taskId, userId, feedback, rating]
+      [id, taskId, userId, feedback, rating]
     );
     res.status(201).json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: "Failed to submit feedback.", details : error.message });
+    res.status(500).json({ error: "Failed to submit feedback." });
   }
 };
+

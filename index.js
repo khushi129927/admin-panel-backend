@@ -24,6 +24,7 @@ require("./src/models/otpModel");
 require("./src/models/paymentsModel");
 require("./src/models/testScoreModel");
 require("./src/models/taskScoreModel");
+require("./src/models/taskAssignmentsModel");
 
 // ✅ CORS: Allow local & tools like Postman
 const allowedOrigins = ["http://localhost:3000", undefined];

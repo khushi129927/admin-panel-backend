@@ -79,16 +79,31 @@ exports.getTests = async (req, res) => {
 
 exports.getTestsByAge = async (req, res) => {
   try {
-    const [results] = await db.execute("SELECT * FROM tests WHERE age=? ORDER BY created_at DESC", [req.params.age]);
+    const [results] = await db.execute(
+      "SELECT * FROM tests WHERE age = ? ORDER BY created_at DESC",
+      [req.params.age]
+    );
     res.status(200).json({ success: true, data: results });
   } catch (error) {
-    console.error("❌ Get Tests Error:", error.message);
-    console.error(error.stack);
+    console.error("❌ Get Tests by Age Error:", error.message);
     res.status(500).json({ error: "Failed to get test questions." });
   }
 };
 
-exports.getTestsByQuarter = async (req, res) => {
+exports.getTestsByQuarterOnly = async (req, res) => {
+  try {
+    const [results] = await db.execute(
+      "SELECT * FROM tests WHERE quarter = ? ORDER BY created_at DESC",
+      [req.params.quarter]
+    );
+    res.status(200).json({ success: true, data: results });
+  } catch (error) {
+    console.error("❌ Get Tests by Quarter Error:", error.message);
+    res.status(500).json({ error: "Failed to get test questions." });
+  }
+};
+
+exports.getTestsByAgeAndQuarter = async (req, res) => {
   const { age, quarter } = req.query;
 
   if (!age || !quarter) {
@@ -101,9 +116,14 @@ exports.getTestsByQuarter = async (req, res) => {
       [age, quarter]
     );
 
-    res.status(200).json({ success: true, quarter, data: results });
+    res.status(200).json({
+      success: true,
+      message: `Tests for Age ${age} and Quarter ${quarter}`,
+      data: results,
+    });
   } catch (error) {
-    console.error("❌ Get Tests by Quarter Error:", error.message);
+    console.error("❌ Get Tests by Age & Quarter Error:", error.message);
     res.status(500).json({ error: "Failed to get test questions." });
   }
 };
+

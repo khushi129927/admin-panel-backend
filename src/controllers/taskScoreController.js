@@ -1,58 +1,56 @@
-// controllers/taskScoreController.js
-const db = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
+const db = require("../config/db");
 
 exports.submitTaskScore = async (req, res) => {
   const { userId, taskId, task_owner, answers } = req.body;
-  console.log("Request payload:", req.body);
 
   try {
-    const [taskRows] = await db.query("SELECT * FROM task WHERE taskId = ?", [taskId]);
-    console.log("Fetched task rows:", taskRows);
+    // 1. Fetch task from DB
+    const [rows] = await db.execute(`SELECT * FROM tasks WHERE taskId = ?`, [taskId]);
+    if (rows.length === 0) return res.status(404).json({ error: "Task not found." });
 
-    if (!taskRows.length) {
-      return res.status(404).json({ error: "Task not found." });
+    const task = rows[0];
+
+    // 2. Normalize and compare task owner
+    const dbTaskOwner = task.task_owner?.toLowerCase().replace(/[’']/g, "'").trim();
+    const inputOwner = task_owner.toLowerCase().replace(/[’']/g, "'").trim();
+    if (!dbTaskOwner.includes(inputOwner)) {
+      return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
     }
 
-    const task = taskRows[0];
-    console.log("Task owner in DB:", task.task_owner);
-
-    if (!task.task_owner || !task.task_owner.toLowerCase().includes(task_owner.toLowerCase())) {
-      return res.status(400).json({ error: `This task does not belong to ${task_owner}.` });
-    }
-
+    // 3. Calculate total score
     let totalScore = 0;
-
-    for (const key of ["mcq1", "mcq2", "mcq3"]) {
-      const optKey = answers[key];
-      const optText = task[optKey];
-      console.log(`Answer [${key}]:`, optKey, "=>", optText);
-
-      if (!optText) continue;
-      const match = optText.match(/\((\d+)\s*\/\s*\d+\)/);
-      console.log(`Score extracted for ${optKey}:`, match ? match[1] : "no match");
-
-      if (match) {
-        totalScore += parseInt(match[1]);
-      }
+    for (const [questionKey, selectedOptionKey] of Object.entries(answers)) {
+      const optText = task[selectedOptionKey];
+      const match = optText?.match(/\((\d+)\s*points\)/i);
+      if (match) totalScore += parseInt(match[1], 10);
     }
 
-    console.log("Total score calculated:", totalScore);
-
+    // 4. Save to task_scores
     const taskScoreId = uuidv4();
     await db.execute(
-      `INSERT INTO task_scores 
-        (taskScoreId, userId, taskId, taskOwner, mcq1, mcq2, mcq3, totalScore, submitted_at) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [taskScoreId, userId, taskId, task_owner, answers.mcq1, answers.mcq2, answers.mcq3, totalScore]
+      `INSERT INTO task_scores (
+        taskScoreId, userId, taskId, taskOwner, mcq1, mcq2, mcq3, totalScore, submitted_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+      [
+        taskScoreId,
+        userId,
+        taskId,
+        task_owner,
+        answers.mcq1,
+        answers.mcq2,
+        answers.mcq3,
+        totalScore
+      ]
     );
 
-    res.status(201).json({ success: true, totalScore });
+    res.status(200).json({ success: true, totalScore });
   } catch (err) {
     console.error("Error in submitTaskScore:", err);
     res.status(500).json({ error: "Failed to submit task score." });
   }
 };
+
 
 
 

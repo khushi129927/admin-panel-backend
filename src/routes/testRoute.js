@@ -10,7 +10,7 @@ const upload = multer({ storage });
 router.post("/upload", uploadTestQuestions);
 
 router.get("/get-all", getTests);
-router.get("/get-test-by-age", getTestsByAge);
-router.get("/get-test-by-quarter", getTestsByQuarter);
+router.get("/get-test-by-age/:age", getTestsByAge);
+router.get("/get-test-by-quarter/:quarter", getTestsByQuarter);
 
 module.exports = router;

@@ -103,7 +103,7 @@ exports.getWeeklyTasksForUser = async (req, res) => {
   try {
     const [rows] = await db.execute(`
       SELECT t.*, a.status FROM task t
-      JOIN task_assignments a ON t.id = a.taskId
+      JOIN task_assignments a ON t.taskId = a.taskId
       WHERE a.userId = ? AND WEEK(t.created_at) = WEEK(NOW())
     `, [req.params.userId]);
     res.json({ success: true, tasks: rows });

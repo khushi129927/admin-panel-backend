@@ -7,7 +7,7 @@ const { v4: uuidv4 } = require("uuid");
 const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 10 * 1024 * 1024 } }).single("file");
 
-// 📤 Upload Excel & Insert MCQs
+// 📤 Upload Excel & Insert MCQs in ascending week order
 exports.uploadTask = (req, res) => {
   upload(req, res, async (err) => {
     if (err) return res.status(400).json({ error: `File upload error: ${err.message}` });
@@ -17,7 +17,14 @@ exports.uploadTask = (req, res) => {
     try {
       const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
       const sheet = workbook.Sheets[workbook.SheetNames[0]];
-      const rawData = xlsx.utils.sheet_to_json(sheet);
+      let rawData = xlsx.utils.sheet_to_json(sheet);
+
+      // ✅ Sort by Week ascending
+      rawData = rawData.sort((a, b) => {
+        const weekA = parseInt(a["Week"].toString().replace(/\D/g, ""), 10);
+        const weekB = parseInt(b["Week"].toString().replace(/\D/g, ""), 10);
+        return weekA - weekB;
+      });
 
       const entries = rawData.map((row) => ([
         uuidv4(),
@@ -29,12 +36,15 @@ exports.uploadTask = (req, res) => {
       ]));
 
       await db.query("INSERT INTO task (taskId, week, task_owner, task, mcq1, mcq2, mcq3, mcq1_opt1, mcq1_opt2, mcq1_opt3, mcq1_opt4, mcq2_opt1, mcq2_opt2, mcq2_opt3, mcq2_opt4, mcq3_opt1, mcq3_opt2, mcq3_opt3, mcq3_opt4) VALUES ?", [entries]);
-      res.status(201).json({ success: true, message: `${entries.length} entries uploaded successfully.` });
+
+      res.status(201).json({ success: true, message: `${entries.length} entries uploaded successfully in ascending order of week.` });
     } catch (error) {
+      console.error("❌ Upload Task Error:", error.message);
       res.status(500).json({ error: "Internal server error." });
     }
   });
 };
+
 
 
 // 📥 Get All Tasks

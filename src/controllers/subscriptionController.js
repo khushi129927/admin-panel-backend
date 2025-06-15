@@ -97,7 +97,7 @@ exports.getPaymentHistory = async (req, res) => {
   }
 };
 
-// ✅ 6. Verify Subscription Payment
+
 // ✅ 6. Verify Subscription Payment
 exports.verifySubscriptionPayment = async (req, res) => {
   const crypto = require("crypto");
@@ -105,12 +105,23 @@ exports.verifySubscriptionPayment = async (req, res) => {
   const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, userId, amount } = req.body;
 
   try {
-    const generated_signature = crypto
-      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-      .update(razorpay_payment_id + "|" + razorpay_subscription_id)
-      .digest("hex");
+    const isDev = process.env.NODE_ENV === "development"; // ✅ Dev mode check
 
-    if (generated_signature !== razorpay_signature) {
+    let verified = false;
+
+    if (isDev) {
+      console.log("🧪 Dev mode: Skipping signature verification.");
+      verified = true;
+    } else {
+      const generated_signature = crypto
+        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+        .update(razorpay_payment_id + "|" + razorpay_subscription_id)
+        .digest("hex");
+
+      verified = generated_signature === razorpay_signature;
+    }
+
+    if (!verified) {
       return res.status(400).json({ success: false, message: "Invalid signature" });
     }
 
@@ -119,7 +130,7 @@ exports.verifySubscriptionPayment = async (req, res) => {
       INSERT INTO payments (paymentId, userId, amount, razorpay_payment_id, razorpay_subscription_id, razorpay_signature, status)
       VALUES (?, ?, ?, ?, ?, ?, ?)
     `;
-    const paymentId = razorpay_payment_id; // or uuid if you prefer
+    const paymentId = razorpay_payment_id; // or use uuid if needed
     await db.execute(sql, [
       paymentId,
       userId,

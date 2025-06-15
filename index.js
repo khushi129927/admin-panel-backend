@@ -56,6 +56,8 @@ app.use("/api/misc", require("./src/routes/miscRoute"));
 app.use("/api/leaderboard", require("./src/routes/leaderboardRoute"));
 app.use("/api/auth", require("./src/routes/authRoute"));
 app.use("/api/otp", require("./src/routes/otpRoute"));
+app.use("/api/testScore", require("./src/routes/testScoreRoute"));
+app.use("/api/taskScore", require("./src/routes/taskScoreRoute"));
 
 // ✅ Catch-All Route for React SPA
 app.get("*", (req, res) => {

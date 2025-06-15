@@ -1,19 +1,26 @@
 // ✅ models/taskScoreModel.js
 const db = require("../config/db");
 
-// ⚙️ Ensure task_scores table exists
-const initializeTaskScoreTable = async () => {
-  await db.execute(`
+const createTaskScoresTable = async () => {
+  const createTableQuery = `
     CREATE TABLE IF NOT EXISTS task_scores (
-      scoreId VARCHAR(255) PRIMARY KEY,
-      taskId VARCHAR(255) NOT NULL,
-      userId VARCHAR(255) NOT NULL,
-      score INT NOT NULL,
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (taskId) REFERENCES task(taskId) ON DELETE CASCADE,
-      FOREIGN KEY (userId) REFERENCES users(userId) ON DELETE CASCADE
-    )
-  `);
+      taskScoreId VARCHAR(36) PRIMARY KEY,
+      userId VARCHAR(100),
+      taskId VARCHAR(100),
+      taskOwner VARCHAR(50),
+      mcq1 VARCHAR(50),
+      mcq2 VARCHAR(50),
+      mcq3 VARCHAR(50),
+      totalScore INT,
+      submitted_at DATETIME
+    )`;
+
+  try {
+    await db.query(createTableQuery);
+    console.log("✅ task_scores table created or already exists.");
+  } catch (err) {
+    console.error("❌ Error creating task_scores table:", err.message);
+  }
 };
 
 const createTaskScore = async (scoreId, taskId, userId, score) => {

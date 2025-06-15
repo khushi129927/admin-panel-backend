@@ -1,5 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const db = require("../config/db");
+const TaskScore = require("../models/taskScoreModel");
 
 exports.submitTaskScore = async (req, res) => {
   const { userId, taskId, task_owner, answers } = req.body;

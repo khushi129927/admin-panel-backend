@@ -124,6 +124,6 @@ exports.submitFeedback = async (req, res) => {
     );
     res.status(201).json({ success: true });
   } catch (err) {
-    res.status(500).json({ error: "Failed to submit feedback." });
+    res.status(500).json({ error: "Failed to submit feedback.", details : error.message });
   }
 };

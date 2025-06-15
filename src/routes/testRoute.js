@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {uploadTestQuestions,getTests} = require("../controllers/testController");
+const {uploadTestQuestions,getTests,getTestsByAge,getTestsByQuarter} = require("../controllers/testController");
 
 const multer = require("multer");
 const storage = multer.memoryStorage();
@@ -10,5 +10,7 @@ const upload = multer({ storage });
 router.post("/upload", uploadTestQuestions);
 
 router.get("/get-all", getTests);
+router.get("/get-test-by-age", getTestsByAge);
+router.get("/get-test-by-quarter", getTestsByQuarter);
 
 module.exports = router;

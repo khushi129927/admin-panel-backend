@@ -40,8 +40,8 @@ exports.createSubscription = async (req, res) => {
 
     res.status(201).json({ success: true, subscription });
   } catch (error) {
-    console.error("❌ Razorpay Create Subscription Error:", error);
-    res.status(500).json({ error: "Failed to create subscription", details: error.message });
+    console.error("❌ Razorpay Create Subscription Error:", error.message);
+    res.status(500).json({ details: error.message, error: "Failed to create subscription" });
   }
 };
 

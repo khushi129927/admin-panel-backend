@@ -74,15 +74,18 @@ exports.assignTaskToUser = async (req, res) => {
   const { taskId, userId, assignedBy } = req.body;
   try {
     const id = uuidv4();
+    console.log("Attempting assignment:", { id, taskId, userId, assignedBy });
     await db.execute(
       "INSERT INTO task_assignments (id, taskId, userId, assignedBy, status, assigned_at) VALUES (?, ?, ?, ?, 'assigned', NOW())",
       [id, taskId, userId, assignedBy]
     );
     res.status(201).json({ success: true, id });
   } catch (err) {
-    res.status(500).json({ error: "Failed to assign task." });
+    console.error("❌ assignTaskToUser - DB error:", err.message);
+    res.status(500).json({ error: "Failed to assign task.", details: err.message });
   }
 };
+
 
 // 🔄 Update Task Status
 exports.updateTaskStatus = async (req, res) => {

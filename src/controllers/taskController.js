@@ -49,16 +49,24 @@ exports.getTask = async (req, res) => {
 
 exports.getTasksByWeek = async (req, res) => {
   try {
-    const week = req.params.week; // should be like "Week 1"
-    const [results] = await db.query("SELECT * FROM task WHERE week = ? ORDER BY task_owner", [week]);
+    const weekNumber = req.params.week; // expecting only number like "1", "2", etc.
+    const weekPattern = `Week ${weekNumber}%`; // match anything like "Week 1", "Week 1 - Reading", etc.
 
-    if (!results.length) return res.status(404).json({ success: false, message: "No tasks found for this week." });
+    const [results] = await db.query(
+      "SELECT * FROM task WHERE week LIKE ? ORDER BY task_owner",
+      [weekPattern]
+    );
 
-    res.status(200).json({ success: true, tasks: results }); // ✅ send all tasks, not just one
+    if (!results.length) {
+      return res.status(404).json({ success: false, message: "No tasks found for this week." });
+    }
+
+    res.status(200).json({ success: true, tasks: results });
   } catch (err) {
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
+
 
 
 // 🎯 Assign Task to User

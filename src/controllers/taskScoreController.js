@@ -38,11 +38,11 @@ exports.submitTaskScore = [
 
       const task = taskRows[0];
       const normalizeOwner = (text) => {
-  return text?.toLowerCase().replace(/[^a-z]/gi, "").trim(); // removes spaces, apostrophes etc.
-};
+      return text?.toLowerCase().replace(/[^a-z]/gi, "").trim(); // removes spaces, apostrophes etc.
+      };
 
-const dbTaskOwner = normalizeOwner(task.task_owner);   // e.g., "Father's Task" → "fatherstask"
-const inputOwner = normalizeOwner(task_owner);         // e.g., "father" → "father"
+      const dbTaskOwner = normalizeOwner(task.task_owner);   // e.g., "Father's Task" → "fatherstask"
+      const inputOwner = normalizeOwner(task_owner);         // e.g., "father" → "father"
 
 const allowedMatches = {
   father: "fatherstask",

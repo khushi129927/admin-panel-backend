@@ -22,6 +22,10 @@ exports.submitTaskScore = [
         mcq3: req.body["answers[mcq3]"],
       };
 
+      console.log("🔍 Body:", req.body);
+console.log("🧾 task_owner:", req.body.task_owner);
+
+
       if (!childId || !taskId || !task_owner) {
         return res.status(400).json({ error: "Missing required fields." });
       }

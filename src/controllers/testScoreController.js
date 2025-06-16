@@ -1,25 +1,23 @@
 const db = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 
-// ➕ Save Score
-// ➕ Save Score
 exports.submitTestScore = async (req, res) => {
-  const { userId, age, quarter, answers } = req.body;
+  const { childId, age, quarter, answers } = req.body;
 
-  if (!userId || !age || !quarter || !Array.isArray(answers)) {
+  if (!childId || !age || !quarter || !Array.isArray(answers)) {
     return res.status(400).json({ error: "Invalid input" });
   }
 
   try {
-    // ✅ Check if the user has already submitted for this quarter
+    // Prevent duplicate submissions per child and quarter
     const [existing] = await db.execute(
-      "SELECT * FROM test_scores WHERE userId = ? AND quarter = ?",
-      [userId, quarter]
+      "SELECT * FROM test_scores WHERE childId = ? AND quarter = ?",
+      [childId, quarter]
     );
 
     if (existing.length > 0) {
       return res.status(409).json({
-        error: "You have already submitted the test for this quarter.",
+        error: "This child has already submitted the test for this quarter.",
       });
     }
 
@@ -41,13 +39,13 @@ exports.submitTestScore = async (req, res) => {
 
     const scoreId = uuidv4();
     const sql = `
-      INSERT INTO test_scores (scoreId, userId, age, quarter, totalScore, submitted_at)
+      INSERT INTO test_scores (scoreId, childId, age, quarter, totalScore, submitted_at)
       VALUES (?, ?, ?, ?, ?, ?)
     `;
 
     await db.execute(sql, [
       scoreId,
-      userId,
+      childId,
       age,
       quarter,
       totalScore,
@@ -66,12 +64,14 @@ exports.submitTestScore = async (req, res) => {
 };
 
 
-// 📤 Get Scores by User
-exports.getScoresByUser = async (req, res) => {
-  const { userId } = req.params;
+exports.getScoresByChild = async (req, res) => {
+  const { childId } = req.params;
 
   try {
-    const [results] = await db.execute("SELECT * FROM test_scores WHERE userId = ? ORDER BY submitted_at DESC", [userId]);
+    const [results] = await db.execute(
+      "SELECT * FROM test_scores WHERE childId = ? ORDER BY submitted_at DESC",
+      [childId]
+    );
     res.status(200).json({ success: true, scores: results });
   } catch (err) {
     console.error("❌ Error fetching scores:", err.message);

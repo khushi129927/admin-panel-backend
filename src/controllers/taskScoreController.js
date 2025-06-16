@@ -3,16 +3,27 @@ const db = require("../config/db");
 const TaskScore = require("../models/taskScoreModel");
 
 exports.submitTaskScore = async (req, res) => {
-  const { userId, taskId, task_owner, answers } = req.body;
+  const { childId, taskId, task_owner, answers } = req.body;
 
   try {
-    // 1. Check if score already exists
-    const [existing] = await db.execute(
-      `SELECT 1 FROM task_scores WHERE userId = ? AND taskId = ?`,
-      [userId, taskId]
+    // 0. Verify childId exists in children table
+    const [childExists] = await db.execute(
+      `SELECT 1 FROM children WHERE childId = ?`,
+      [childId]
     );
+
+    if (childExists.length === 0) {
+      return res.status(404).json({ error: "Child not found in children table." });
+    }
+
+    // 1. Check if already submitted
+    const [existing] = await db.execute(
+      `SELECT 1 FROM task_scores WHERE childId = ? AND taskId = ?`,
+      [childId, taskId]
+    );
+
     if (existing.length > 0) {
-      return res.status(409).json({ error: "Task already submitted by this user." });
+      return res.status(409).json({ error: "Task already submitted for this child." });
     }
 
     // 2. Fetch task
@@ -36,15 +47,15 @@ exports.submitTaskScore = async (req, res) => {
       if (match) totalScore += parseInt(match[1], 10);
     }
 
-    // 5. Save result
+    // 5. Save to task_scores
     const taskScoreId = uuidv4();
     await db.execute(
       `INSERT INTO task_scores (
-        taskScoreId, userId, taskId, taskOwner, mcq1, mcq2, mcq3, totalScore, submitted_at
+        taskScoreId, childId, taskId, taskOwner, mcq1, mcq2, mcq3, totalScore, submitted_at
       ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
       [
         taskScoreId,
-        userId,
+        childId,
         taskId,
         task_owner,
         answers.mcq1,
@@ -62,16 +73,15 @@ exports.submitTaskScore = async (req, res) => {
 };
 
 
-
-exports.getUserTaskScores = async (req, res) => {
-  const { userId } = req.params;
+// 📤 Get Scores by Child
+exports.getChildTaskScores = async (req, res) => {
+  const { childId } = req.params;
 
   try {
-    const scores = await TaskScore.getScoresByUser(userId);
+    const scores = await TaskScore.getScoresByChild(childId);
     res.status(200).json({ success: true, data: scores });
   } catch (error) {
-    console.error("❌ Get User Task Scores Error:", error.message);
+    console.error("❌ Get Child Task Scores Error:", error.message);
     res.status(500).json({ error: "Failed to fetch task scores." });
   }
 };
-

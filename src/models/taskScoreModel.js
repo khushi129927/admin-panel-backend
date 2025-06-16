@@ -25,20 +25,19 @@ const createTaskScoresTable = async () => {
 };
 
 // 📝 Insert New Score
-const createTaskScore = async (taskScoreId, taskId, userId, taskOwner, mcq1, mcq2, mcq3, totalScore) => {
+const createTaskScore = async (taskScoreId, taskId, childId, taskOwner, mcq1, mcq2, mcq3, totalScore) => {
   const [result] = await db.execute(
-    `INSERT INTO task_scores (taskScoreId, taskId, userId, taskOwner, mcq1, mcq2, mcq3, totalScore, submitted_at)
+    `INSERT INTO task_scores (taskScoreId, taskId, childId, taskOwner, mcq1, mcq2, mcq3, totalScore, submitted_at)
      VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-    [taskScoreId, taskId, userId, taskOwner, mcq1, mcq2, mcq3, totalScore]
+    [taskScoreId, taskId, childId, taskOwner, mcq1, mcq2, mcq3, totalScore]
   );
   return result;
 };
 
-// 📊 Get Scores by User
-const getScoresByUser = async (userId) => {
+const getScoresByChild = async (childId) => {
   const [rows] = await db.execute(
-    `SELECT * FROM task_scores WHERE userId = ? ORDER BY submitted_at DESC`,
-    [userId]
+    `SELECT * FROM task_scores WHERE childId = ? ORDER BY submitted_at DESC`,
+    [childId]
   );
   return rows;
 };
@@ -49,5 +48,5 @@ createTaskScoresTable();
 
 module.exports = {
   createTaskScore,
-  getScoresByUser,
+  getScoresByChild,
 };

@@ -1,6 +1,7 @@
 const db = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 
+// ➕ Save Test Score
 exports.submitTestScore = async (req, res) => {
   const { childId, age, quarter, answers } = req.body;
 
@@ -9,20 +10,28 @@ exports.submitTestScore = async (req, res) => {
   }
 
   try {
-    // Prevent duplicate submissions per child and quarter
+    // 0. Check if child exists
+    const [childExists] = await db.execute(
+      "SELECT 1 FROM children WHERE childId = ?",
+      [childId]
+    );
+    if (childExists.length === 0) {
+      return res.status(404).json({ error: "Child not found in children table." });
+    }
+
+    // 1. Check if already submitted
     const [existing] = await db.execute(
-      "SELECT * FROM test_scores WHERE childId = ? AND quarter = ?",
+      "SELECT 1 FROM test_scores WHERE childId = ? AND quarter = ?",
       [childId, quarter]
     );
-
     if (existing.length > 0) {
       return res.status(409).json({
-        error: "This child has already submitted the test for this quarter.",
+        error: "You have already submitted the test for this quarter.",
       });
     }
 
+    // 2. Calculate score
     let totalScore = 0;
-
     for (const answer of answers) {
       const [rows] = await db.execute(
         "SELECT * FROM tests WHERE testId = ?",
@@ -37,20 +46,13 @@ exports.submitTestScore = async (req, res) => {
       totalScore += Number(points) || 0;
     }
 
+    // 3. Save result
     const scoreId = uuidv4();
-    const sql = `
-      INSERT INTO test_scores (scoreId, childId, age, quarter, totalScore, submitted_at)
-      VALUES (?, ?, ?, ?, ?, ?)
-    `;
-
-    await db.execute(sql, [
-      scoreId,
-      childId,
-      age,
-      quarter,
-      totalScore,
-      new Date(),
-    ]);
+    await db.execute(
+      `INSERT INTO test_scores (scoreId, childId, age, quarter, totalScore, submitted_at)
+       VALUES (?, ?, ?, ?, ?, NOW())`,
+      [scoreId, childId, age, quarter, totalScore]
+    );
 
     res.status(201).json({
       success: true,
@@ -62,6 +64,7 @@ exports.submitTestScore = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
 
 
 exports.getScoresByChild = async (req, res) => {

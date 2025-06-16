@@ -3,7 +3,6 @@ const db = require("../config/db");
 const TaskScore = require("../models/taskScoreModel");
 const upload = require("../middleware/upload");
 
-// 🧠 Submit Task Score Controller
 exports.submitTaskScore = [
   upload.fields([
     { name: "image", maxCount: 1 },
@@ -11,9 +10,12 @@ exports.submitTaskScore = [
   ]),
   async (req, res) => {
     try {
-      const childId = req.body.childId?.trim();
-      const taskId = req.body.taskId?.trim();
-      const task_owner = req.body.task_owner?.trim();
+      // 🔍 Fix extra tab issues
+      const trimKey = (key) => key.replace(/\s/g, "").trim();
+
+      const childId = trimKey(req.body.childId || req.body["childId\t"]);
+      const taskId = trimKey(req.body.taskId);
+      const task_owner = (req.body.task_owner || "").trim();
       const comment = req.body.comment?.trim() || null;
 
       const answers = {
@@ -22,14 +24,11 @@ exports.submitTaskScore = [
         mcq3: req.body["answers[mcq3]"],
       };
 
-      console.log("🔍 Body:", req.body);
-console.log("🧾 task_owner:", req.body.task_owner);
-
-
       if (!childId || !taskId || !task_owner) {
         return res.status(400).json({ error: "Missing required fields." });
       }
 
+      // ✅ Validate child exists
       const [childExists] = await db.execute(
         `SELECT 1 FROM children WHERE childId = ?`,
         [childId]
@@ -38,6 +37,7 @@ console.log("🧾 task_owner:", req.body.task_owner);
         return res.status(404).json({ error: "Child not found in children table." });
       }
 
+      // ✅ Prevent duplicate submission
       const [existing] = await db.execute(
         `SELECT 1 FROM task_scores WHERE childId = ? AND taskId = ?`,
         [childId, taskId]
@@ -46,6 +46,7 @@ console.log("🧾 task_owner:", req.body.task_owner);
         return res.status(409).json({ error: "Task already submitted for this child." });
       }
 
+      // ✅ Fetch task
       const [rows] = await db.execute(`SELECT * FROM task WHERE taskId = ?`, [taskId]);
       if (rows.length === 0) {
         return res.status(404).json({ error: "Task not found." });
@@ -61,9 +62,10 @@ console.log("🧾 task_owner:", req.body.task_owner);
 
       // ✅ Score calculation
       let totalScore = 0;
-      for (const [key, selected] of Object.entries(answers)) {
-        const optText = task[selected];
-        const match = optText?.match(/\((\d+)\s*points\)/i);
+      for (const [mcqKey, selectedOption] of Object.entries(answers)) {
+        const answerText = task[selectedOption]; // task["mcq1_opt3"]
+        console.log("🎯 Answer option:", selectedOption, "->", answerText);
+        const match = answerText?.match(/\((\d+)\s*points\)/i);
         if (match) totalScore += parseInt(match[1], 10);
       }
 
@@ -71,20 +73,25 @@ console.log("🧾 task_owner:", req.body.task_owner);
       const image_url = req.files?.image?.[0]?.path || null;
       const video_url = req.files?.video?.[0]?.path || null;
 
-      // ✅ Insert task score
+      // ✅ Save to DB
       const taskScoreId = uuidv4();
-      await TaskScore.createTaskScore(
-        taskScoreId,
-        taskId,
-        childId,
-        task_owner,
-        answers.mcq1 || null,
-        answers.mcq2 || null,
-        answers.mcq3 || null,
-        totalScore,
-        comment,
-        image_url,
-        video_url
+      await db.execute(
+        `INSERT INTO task_scores (
+          taskScoreId, childId, taskId, taskOwner, mcq1, mcq2, mcq3, totalScore, comment, image_url, video_url, submitted_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        [
+          taskScoreId,
+          childId,
+          taskId,
+          task_owner,
+          answers.mcq1,
+          answers.mcq2,
+          answers.mcq3,
+          totalScore,
+          comment,
+          image_url,
+          video_url,
+        ]
       );
 
       res.status(200).json({
@@ -104,7 +111,6 @@ console.log("🧾 task_owner:", req.body.task_owner);
 // 📤 Get Scores by Child
 exports.getChildTaskScores = async (req, res) => {
   const { childId } = req.params;
-
   try {
     const scores = await TaskScore.getScoresByChild(childId);
     res.status(200).json({ success: true, data: scores });

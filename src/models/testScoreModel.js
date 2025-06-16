@@ -4,7 +4,7 @@ const createTestScoreTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS test_scores (
       scoreId VARCHAR(36) PRIMARY KEY,
-      userId VARCHAR(100),
+      childId VARCHAR(100),
       age VARCHAR(100),
       quarter VARCHAR(100),
       totalScore NUMERIC,

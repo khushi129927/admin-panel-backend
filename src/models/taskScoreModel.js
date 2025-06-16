@@ -6,7 +6,7 @@ const createTaskScoresTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS task_scores (
       taskScoreId VARCHAR(36) PRIMARY KEY,
-      userId VARCHAR(100),
+      childId VARCHAR(100),
       taskId VARCHAR(100),
       taskOwner VARCHAR(50),
       mcq1 VARCHAR(50),

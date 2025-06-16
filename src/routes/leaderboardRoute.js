@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const {getLeaderboard,getUserRank} = require("../controllers/leaderboardController");
+const {getLeaderboard,getChildRank} = require("../controllers/leaderboardController");
 
 router.get("/get-all", getLeaderboard);             // 30
-router.get("/rank/:userId", getUserRank);   // 31
+router.get("/rank/:childId", getChildRank);   // 31
 
 module.exports = router;

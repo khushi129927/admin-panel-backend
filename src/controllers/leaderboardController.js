@@ -4,13 +4,20 @@ const db = require("../config/db");
 exports.getLeaderboard = async (req, res) => {
   try {
     const [rows] = await db.execute(`
-      SELECT u.id, u.name, AVG(r.score) AS avg_score
-      FROM users u
-      JOIN eq_results r ON u.id = r.userId
-      GROUP BY u.id
-      ORDER BY avg_score DESC
+      SELECT c.childId, c.name AS childName, c.profile_image, 
+             COALESCE(AVG(ts.totalScore), 0) AS avg_test_score,
+             COALESCE(AVG(tks.totalScore), 0) AS avg_task_score,
+             (
+               COALESCE(AVG(ts.totalScore), 0) + COALESCE(AVG(tks.totalScore), 0)
+             ) / 2 AS combined_score
+      FROM children c
+      LEFT JOIN test_scores ts ON c.childId = ts.childId
+      LEFT JOIN task_scores tks ON c.childId = tks.childId
+      GROUP BY c.childId
+      ORDER BY combined_score DESC
       LIMIT 20
     `);
+
     res.json({ success: true, leaderboard: rows });
   } catch (err) {
     console.error("❌ Leaderboard Error:", err.message);
@@ -18,25 +25,33 @@ exports.getLeaderboard = async (req, res) => {
   }
 };
 
+
 // 📤 Share Rank (User Rank Info)
-exports.getUserRank = async (req, res) => {
-  const { userId } = req.params;
+exports.getChildRank = async (req, res) => {
+  const { childId } = req.params;
+
   try {
-    const [users] = await db.execute(`
-      SELECT userId, AVG(score) AS avg_score
-      FROM eq_results
-      GROUP BY userId
-      ORDER BY avg_score DESC
+    const [all] = await db.execute(`
+      SELECT c.childId, 
+             (
+               COALESCE(AVG(ts.totalScore), 0) + COALESCE(AVG(tks.totalScore), 0)
+             ) / 2 AS combined_score
+      FROM children c
+      LEFT JOIN test_scores ts ON c.childId = ts.childId
+      LEFT JOIN task_scores tks ON c.childId = tks.childId
+      GROUP BY c.childId
+      ORDER BY combined_score DESC
     `);
 
-    const rank = users.findIndex(u => u.userId === userId) + 1;
-    const user = users.find(u => u.userId === userId);
+    const rank = all.findIndex(c => c.childId === childId) + 1;
+    const child = all.find(c => c.childId === childId);
 
-    if (!user) return res.status(404).json({ error: "User not found in ranking." });
+    if (!child) return res.status(404).json({ error: "Child not found in ranking." });
 
-    res.json({ success: true, rank, avg_score: user.avg_score });
+    res.json({ success: true, rank, combined_score: child.combined_score });
   } catch (err) {
-    console.error("❌ Rank Share Error:", err.message);
-    res.status(500).json({ error: "Failed to fetch user rank." });
+    console.error("❌ Rank Fetch Error:", err.message);
+    res.status(500).json({ error: "Failed to fetch rank." });
   }
 };
+

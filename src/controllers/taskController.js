@@ -70,22 +70,33 @@ exports.getTasksByWeek = async (req, res) => {
 
 
 // 🎯 Assign Task to User
-exports.assignTaskToUser = async (req, res) => {
-  const { taskId, userId, assignedBy } = req.body;
+exports.assignTaskToChild = async (req, res) => {
+  const { taskId, childId, assignedBy } = req.body;
+
+  if (!taskId || !childId || !assignedBy) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
   try {
+    // ✅ Check if childId exists
+    const [childRows] = await db.execute("SELECT 1 FROM children WHERE childId = ?", [childId]);
+    if (childRows.length === 0) {
+      return res.status(404).json({ error: "Child not found." });
+    }
+
+    // ✅ Assign the task
     const id = uuidv4();
-    console.log("Attempting assignment:", { id, taskId, userId, assignedBy });
     await db.execute(
-      "INSERT INTO task_assignments (id, taskId, userId, assignedBy, status, assigned_at) VALUES (?, ?, ?, ?, 'assigned', NOW())",
-      [id, taskId, userId, assignedBy]
+      "INSERT INTO task_assignments (id, taskId, childId, assignedBy, status, assigned_at) VALUES (?, ?, ?, ?, 'assigned', NOW())",
+      [id, taskId, childId, assignedBy]
     );
+
     res.status(201).json({ success: true, id });
   } catch (err) {
-    console.error("❌ assignTaskToUser - DB error:", err.message);
+    console.error("❌ assignTaskToChild - DB error:", err.message);
     res.status(500).json({ error: "Failed to assign task.", details: err.message });
   }
 };
-
 
 // 🔄 Update Task Status
 exports.updateTaskStatus = async (req, res) => {

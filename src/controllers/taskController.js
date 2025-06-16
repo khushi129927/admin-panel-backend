@@ -49,12 +49,12 @@ exports.getTask = async (req, res) => {
 
 exports.getTasksByWeek = async (req, res) => {
   try {
-    const weekNumber = req.params.week; // just the number like "56"
-    const weekPattern = `Week ${weekNumber}%`;
+    const weekNumber = req.params.week; // e.g., "1"
+    const exactWeek = `Week ${weekNumber}`;
 
     const [results] = await db.query(
-      "SELECT * FROM task WHERE week LIKE ? ORDER BY week ASC, task_owner ASC",
-      [weekPattern]
+      "SELECT * FROM task WHERE week = ? ORDER BY week ASC, task_owner ASC",
+      [exactWeek]
     );
 
     if (!results.length) {
@@ -66,6 +66,7 @@ exports.getTasksByWeek = async (req, res) => {
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 };
+
 
 
 

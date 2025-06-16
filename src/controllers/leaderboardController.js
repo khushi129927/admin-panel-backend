@@ -4,18 +4,19 @@ const db = require("../config/db");
 exports.getLeaderboard = async (req, res) => {
   try {
     const [rows] = await db.execute(`
-      SELECT c.childId, c.name AS childName, c.profile_image, 
-             COALESCE(AVG(ts.totalScore), 0) AS avg_test_score,
-             COALESCE(AVG(tks.totalScore), 0) AS avg_task_score,
-             (
-               COALESCE(AVG(ts.totalScore), 0) + COALESCE(AVG(tks.totalScore), 0)
-             ) / 2 AS combined_score
-      FROM children c
-      LEFT JOIN test_scores ts ON c.childId = ts.childId
-      LEFT JOIN task_scores tks ON c.childId = tks.childId
-      GROUP BY c.childId
-      ORDER BY combined_score DESC
-      LIMIT 20
+      SELECT c.childId, c.name AS childName, 
+       COALESCE(AVG(ts.totalScore), 0) AS avg_test_score,
+       COALESCE(AVG(tks.totalScore), 0) AS avg_task_score,
+       (
+         COALESCE(AVG(ts.totalScore), 0) + COALESCE(AVG(tks.totalScore), 0)
+       ) / 2 AS combined_score
+FROM children c
+LEFT JOIN test_scores ts ON c.childId = ts.childId
+LEFT JOIN task_scores tks ON c.childId = tks.childId
+GROUP BY c.childId
+ORDER BY combined_score DESC
+LIMIT 20
+
     `);
 
     res.json({ success: true, leaderboard: rows });

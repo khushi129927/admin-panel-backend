@@ -27,7 +27,7 @@ exports.submitTaskScore = async (req, res) => {
     }
 
     // 2. Fetch task
-    const [rows] = await db.execute(`SELECT * FROM tasks WHERE taskId = ?`, [taskId]);
+    const [rows] = await db.execute(`SELECT * FROM task WHERE taskId = ?`, [taskId]);
     if (rows.length === 0) return res.status(404).json({ error: "Task not found." });
 
     const task = rows[0];

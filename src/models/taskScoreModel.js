@@ -13,6 +13,9 @@ const createTaskScoresTable = async () => {
       mcq2 VARCHAR(50),
       mcq3 VARCHAR(50),
       totalScore INT,
+      comment TEXT,
+      image_url TEXT,
+      video_url TEXT,
       submitted_at DATETIME
     )`;
 
@@ -25,15 +28,29 @@ const createTaskScoresTable = async () => {
 };
 
 // 📝 Insert New Score
-const createTaskScore = async (taskScoreId, taskId, childId, taskOwner, mcq1, mcq2, mcq3, totalScore) => {
+const createTaskScore = async (
+  taskScoreId,
+  taskId,
+  childId,
+  taskOwner,
+  mcq1,
+  mcq2,
+  mcq3,
+  totalScore,
+  comment,
+  image_url,
+  video_url
+) => {
   const [result] = await db.execute(
-    `INSERT INTO task_scores (taskScoreId, taskId, childId, taskOwner, mcq1, mcq2, mcq3, totalScore, submitted_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-    [taskScoreId, taskId, childId, taskOwner, mcq1, mcq2, mcq3, totalScore]
+    `INSERT INTO task_scores (
+      taskScoreId, taskId, childId, taskOwner, mcq1, mcq2, mcq3, totalScore, comment, image_url, video_url, submitted_at
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+    [taskScoreId, taskId, childId, taskOwner, mcq1, mcq2, mcq3, totalScore, comment, image_url, video_url]
   );
   return result;
 };
 
+// 📥 Get scores by child
 const getScoresByChild = async (childId) => {
   const [rows] = await db.execute(
     `SELECT * FROM task_scores WHERE childId = ? ORDER BY submitted_at DESC`,
@@ -41,7 +58,6 @@ const getScoresByChild = async (childId) => {
   );
   return rows;
 };
-
 
 // 🔁 Initialize on import
 createTaskScoresTable();

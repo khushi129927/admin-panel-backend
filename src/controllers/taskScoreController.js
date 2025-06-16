@@ -1,8 +1,6 @@
 const { v4: uuidv4 } = require("uuid");
 const db = require("../config/db");
 const TaskScore = require("../models/taskScoreModel");
-
-// ✅ Upload middleware
 const upload = require("../middleware/upload");
 
 // 🧠 Submit Task Score Controller
@@ -13,7 +11,6 @@ exports.submitTaskScore = [
   ]),
   async (req, res) => {
     try {
-      // Extract and sanitize inputs
       const childId = req.body.childId?.trim();
       const taskId = req.body.taskId?.trim();
       const task_owner = req.body.task_owner?.trim();
@@ -25,7 +22,10 @@ exports.submitTaskScore = [
         mcq3: req.body["answers[mcq3]"],
       };
 
-      // ✅ Validate childId exists
+      if (!childId || !taskId || !task_owner) {
+        return res.status(400).json({ error: "Missing required fields." });
+      }
+
       const [childExists] = await db.execute(
         `SELECT 1 FROM children WHERE childId = ?`,
         [childId]
@@ -34,7 +34,6 @@ exports.submitTaskScore = [
         return res.status(404).json({ error: "Child not found in children table." });
       }
 
-      // ✅ Check duplicate submission
       const [existing] = await db.execute(
         `SELECT 1 FROM task_scores WHERE childId = ? AND taskId = ?`,
         [childId, taskId]
@@ -43,7 +42,6 @@ exports.submitTaskScore = [
         return res.status(409).json({ error: "Task already submitted for this child." });
       }
 
-      // ✅ Get task and verify owner
       const [rows] = await db.execute(`SELECT * FROM task WHERE taskId = ?`, [taskId]);
       if (rows.length === 0) {
         return res.status(404).json({ error: "Task not found." });
@@ -71,26 +69,20 @@ exports.submitTaskScore = [
 
       // ✅ Insert task score
       const taskScoreId = uuidv4();
-      await db.execute(
-        `INSERT INTO task_scores (
-          taskScoreId, childId, taskId, taskOwner, mcq1, mcq2, mcq3, totalScore, comment, image_url, video_url, submitted_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-        [
-          taskScoreId,
-          childId,
-          taskId,
-          task_owner,
-          answers.mcq1,
-          answers.mcq2,
-          answers.mcq3,
-          totalScore,
-          comment,
-          image_url,
-          video_url,
-        ]
+      await TaskScore.createTaskScore(
+        taskScoreId,
+        taskId,
+        childId,
+        task_owner,
+        answers.mcq1 || null,
+        answers.mcq2 || null,
+        answers.mcq3 || null,
+        totalScore,
+        comment,
+        image_url,
+        video_url
       );
 
-      // ✅ Success response
       res.status(200).json({
         success: true,
         totalScore,

@@ -2,77 +2,92 @@ const { v4: uuidv4 } = require("uuid");
 const db = require("../config/db");
 const TaskScore = require("../models/taskScoreModel");
 
-exports.submitTaskScore = async (req, res) => {
-  const { childId, taskId, task_owner, answers, comment, image_url, video_url } = req.body;
+// ⬇️ require upload middleware
+const upload = require("../middleware/upload"); // adjust path if needed
 
-  try {
-    const [childExists] = await db.execute(
-      `SELECT 1 FROM children WHERE childId = ?`,
-      [childId]
-    );
-    if (childExists.length === 0) {
-      return res.status(404).json({ error: "Child not found in children table." });
-    }
+exports.submitTaskScore = [
+  upload.fields([
+    { name: "image", maxCount: 1 },
+    { name: "video", maxCount: 1 },
+  ]),
+  async (req, res) => {
+    const { childId, taskId, task_owner, answers, comment } = req.body;
 
-    const [existing] = await db.execute(
-      `SELECT 1 FROM task_scores WHERE childId = ? AND taskId = ?`,
-      [childId, taskId]
-    );
-    if (existing.length > 0) {
-      return res.status(409).json({ error: "Task already submitted for this child." });
-    }
+    try {
+      const [childExists] = await db.execute(
+        `SELECT 1 FROM children WHERE childId = ?`,
+        [childId]
+      );
+      if (childExists.length === 0) {
+        return res.status(404).json({ error: "Child not found in children table." });
+      }
 
-    const [rows] = await db.execute(`SELECT * FROM task WHERE taskId = ?`, [taskId]);
-    if (rows.length === 0) return res.status(404).json({ error: "Task not found." });
+      const [existing] = await db.execute(
+        `SELECT 1 FROM task_scores WHERE childId = ? AND taskId = ?`,
+        [childId, taskId]
+      );
+      if (existing.length > 0) {
+        return res.status(409).json({ error: "Task already submitted for this child." });
+      }
 
-    const task = rows[0];
-    const dbTaskOwner = task.task_owner?.toLowerCase().replace(/[’']/g, "'").trim();
-    const inputOwner = task_owner.toLowerCase().replace(/[’']/g, "'").trim();
+      const [rows] = await db.execute(`SELECT * FROM task WHERE taskId = ?`, [taskId]);
+      if (rows.length === 0)
+        return res.status(404).json({ error: "Task not found." });
 
-    if (!dbTaskOwner.includes(inputOwner)) {
-      return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
-    }
+      const task = rows[0];
+      const dbTaskOwner = task.task_owner?.toLowerCase().replace(/[’']/g, "'").trim();
+      const inputOwner = task_owner.toLowerCase().replace(/[’']/g, "'").trim();
 
-    let totalScore = 0;
-    for (const [key, selected] of Object.entries(answers)) {
-      const optText = task[selected];
-      const match = optText?.match(/\((\d+)\s*points\)/i);
-      if (match) totalScore += parseInt(match[1], 10);
-    }
+      if (!dbTaskOwner.includes(inputOwner)) {
+        return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
+      }
 
-    const taskScoreId = uuidv4();
-    await db.execute(
-      `INSERT INTO task_scores (
-        taskScoreId, childId, taskId, taskOwner, mcq1, mcq2, mcq3, totalScore, comment, image_url, video_url, submitted_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-      [
-        taskScoreId,
-        childId,
-        taskId,
-        task_owner,
-        answers.mcq1,
-        answers.mcq2,
-        answers.mcq3,
+      // ✅ Score calculation
+      let totalScore = 0;
+      for (const [key, selected] of Object.entries(answers)) {
+        const optText = task[selected];
+        const match = optText?.match(/\((\d+)\s*points\)/i);
+        if (match) totalScore += parseInt(match[1], 10);
+      }
+
+      // ✅ Extract uploaded file URLs
+      const image_url = req.files?.image?.[0]?.path || null;
+      const video_url = req.files?.video?.[0]?.path || null;
+
+      const taskScoreId = uuidv4();
+      await db.execute(
+        `INSERT INTO task_scores (
+          taskScoreId, childId, taskId, taskOwner, mcq1, mcq2, mcq3, totalScore, comment, image_url, video_url, submitted_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+        [
+          taskScoreId,
+          childId,
+          taskId,
+          task_owner,
+          answers.mcq1,
+          answers.mcq2,
+          answers.mcq3,
+          totalScore,
+          comment || null,
+          image_url,
+          video_url,
+        ]
+      );
+
+      res.status(200).json({
+        success: true,
         totalScore,
-        comment || null,
-        image_url || null,
-        video_url || null
-      ]
-    );
+        comment,
+        image_url,
+        video_url,
+      });
+    } catch (err) {
+      console.error("❌ Error in submitTaskScore:", err);
+      res.status(500).json({ error: "Failed to submit task score." });
+    }
+  },
+];
 
-    res.status(200).json({
-      success: true,
-      totalScore,
-      comment,
-      image_url,
-      video_url
-    });
-
-  } catch (err) {
-    console.error("❌ Error in submitTaskScore:", err);
-    res.status(500).json({ error: "Failed to submit task score." });
-  }
-};
 
 
 

@@ -17,9 +17,9 @@ exports.submitTaskScore = [
       const comment = req.body.comment?.trim() || null;
 
       const answers = {
-        mcq1: req.body["answers[mcq1]"],
-        mcq2: req.body["answers[mcq2]"],
-        mcq3: req.body["answers[mcq3]"],
+        mcq1: req.body.mcq1, // e.g., "mcq1_opt3"
+        mcq2: req.body.mcq2, // e.g., "mcq2_opt1"
+        mcq3: req.body.mcq3, // e.g., "mcq3_opt2"
       };
 
       if (!childId || !taskId || !task_owner) {
@@ -55,26 +55,17 @@ exports.submitTaskScore = [
         return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
       }
 
-      console.log("📦 Task keys:", Object.keys(task));
-console.log("🎯 Answers submitted:", answers);
-
       // ✅ Score calculation
       let totalScore = 0;
-      for (const [key, selected] of Object.entries(answers)) {
-  if (!selected || !task.hasOwnProperty(selected)) {
-    console.warn(`⚠️ Skipping invalid option key: ${selected}`);
-    continue;
-  }
-
-  const optText = task[selected];
-  const match = optText?.match(/\((\d+)\s*points\)/i);
-  if (match) {
-    const score = parseInt(match[1], 10);
-    console.log(`🧮 ${selected}: ${score} points`);
-    totalScore += score;
-  }
-}
-
+      for (const selectedKey of Object.values(answers)) {
+        const optText = task[selectedKey]; // e.g., task["mcq1_opt3"]
+        const match = optText?.match(/\((\d+)\s*points\)/i);
+        if (match) {
+          totalScore += parseInt(match[1], 10);
+        } else {
+          console.warn(`⚠️ Invalid or missing points in field: ${selectedKey}`);
+        }
+      }
 
       // ✅ File uploads
       const image_url = req.files?.image?.[0]?.path || null;

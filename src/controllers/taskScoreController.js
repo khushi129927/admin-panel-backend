@@ -37,11 +37,23 @@ exports.submitTaskScore = [
       }
 
       const task = taskRows[0];
-      const dbTaskOwner = task.task_owner?.toLowerCase().replace(/[’']/g, "'").trim();
-      const inputTaskOwner = task_owner.toLowerCase().replace(/[’']/g, "'").trim();
-      if (dbTaskOwner !== inputTaskOwner) {
-        return res.status(403).json({ error: "This task does not belong to the specified task owner." });
-      }
+      const normalizeOwner = (text) => {
+  return text?.toLowerCase().replace(/[^a-z]/gi, "").trim(); // removes spaces, apostrophes etc.
+};
+
+const dbTaskOwner = normalizeOwner(task.task_owner);   // e.g., "Father's Task" → "fatherstask"
+const inputOwner = normalizeOwner(task_owner);         // e.g., "father" → "father"
+
+const allowedMatches = {
+  father: "fatherstask",
+  mother: "motherstask",
+  combined: "combinedtask"
+};
+
+if (allowedMatches[inputOwner] !== dbTaskOwner) {
+  return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
+}
+
 
       // ✅ Prevent duplicate submissions
       const [existing] = await db.execute(

@@ -18,7 +18,6 @@ require("./src/models/analyticsModel");
 require("./src/models/locationModel");
 require('./src/models/couponModel');
 require("./src/models/termsModel");
-require("./src/models/locationModel");
 require("./src/models/reviewsModel");
 require("./src/models/otpModel");
 require("./src/models/paymentsModel");
@@ -26,6 +25,7 @@ require("./src/models/testScoreModel");
 require("./src/models/taskScoreModel");
 require("./src/models/taskAssignmentsModel");
 require("./src/models/taskFeedbackModel");
+require("./src/models/leaderboardModel");
 
 // ✅ CORS: Allow local & tools like Postman
 const allowedOrigins = ["http://localhost:3000", undefined];

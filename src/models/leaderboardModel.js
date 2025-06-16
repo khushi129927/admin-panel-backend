@@ -3,12 +3,14 @@ const db = require("../config/db");
 const createLeaderboardTable = async () => {
   const query = `
     CREATE TABLE IF NOT EXISTS leaderboard (
-      userId VARCHAR(36) PRIMARY KEY,
-      points INT DEFAULT 0,
-      rank INT,
-      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-      FOREIGN KEY (userId) REFERENCES users(userId)
-    )`;
+      childId VARCHAR(36) PRIMARY KEY,
+      totalScore INT DEFAULT 0,
+      averageScore FLOAT DEFAULT 0,
+      rank INT DEFAULT NULL,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (childId) REFERENCES children(childId)
+    )
+  `;
   try {
     await db.query(query);
     console.log("✅ Leaderboard table ready.");

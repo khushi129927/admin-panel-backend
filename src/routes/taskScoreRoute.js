@@ -4,6 +4,6 @@ const router = express.Router();
 const taskScoreController = require("../controllers/taskScoreController");
 
 router.post("/submit", taskScoreController.submitTaskScore);
-router.get("/user/:userId", taskScoreController.getUserTaskScores);
+router.get("/child/:childId", taskScoreController.getChildTaskScores);
 
 module.exports = router;

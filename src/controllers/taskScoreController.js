@@ -17,10 +17,12 @@ exports.submitTaskScore = [
       const comment = req.body.comment?.trim() || null;
 
       const answers = {
-        mcq1: req.body.mcq1, // e.g., "mcq1_opt3"
-        mcq2: req.body.mcq2, // e.g., "mcq2_opt1"
-        mcq3: req.body.mcq3, // e.g., "mcq3_opt2"
-      };
+  mcq1: req.body["answers[mcq1]"],
+  mcq2: req.body["answers[mcq2]"],
+  mcq3: req.body["answers[mcq3]"]
+};
+
+console.log("🎯 Answers submitted:", answers);
 
       if (!childId || !taskId || !task_owner) {
         return res.status(400).json({ error: "Missing required fields." });

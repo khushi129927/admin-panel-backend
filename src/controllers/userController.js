@@ -73,8 +73,6 @@ exports.createParent = async (req, res) => {
   }
 };
 
-
-
 // 👧 Create Child
 exports.createChild = async (req, res) => {
   const {
@@ -141,8 +139,6 @@ exports.createChild = async (req, res) => {
   }
 };
 
-
-
 // 🔁 Update Parent
 exports.updateParent = async (req, res) => {
   const {
@@ -171,13 +167,17 @@ exports.updateParent = async (req, res) => {
 
     const existingUser = userRows[0];
 
-    // Check if email changed and is already in use
-    if (email && email !== existingUser.email) {
-      const [emailRows] = await db.execute("SELECT * FROM users WHERE email = ? AND userId != ?", [email, userId]);
-      if (emailRows.length > 0) {
-        return res.status(400).json({ error: "Email already in use by another account." });
-      }
-    }
+    // Only check for duplicate email if the user actually changed the email
+if (email && email !== existingUser.email) {
+  const [emailRows] = await db.execute(
+    "SELECT * FROM users WHERE email = ? AND userId != ?",
+    [email, userId]
+  );
+  if (emailRows.length > 0) {
+    return res.status(400).json({ error: "This email is already used by another user." });
+  }
+}
+
 
     // Determine final values
     const finalName = name === undefined || name === "" ? existingUser.name : name;
@@ -222,11 +222,6 @@ exports.updateParent = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-
-
-
-
 
 // 🔁 Update Child
 exports.updateChild = async (req, res) => {
@@ -325,12 +320,6 @@ exports.updateChild = async (req, res) => {
   }
 };
 
-
-
-
-
-
-
 // 👀 Get Children of Parent
 exports.getChildren = async (req, res) => {
   try {
@@ -351,7 +340,6 @@ exports.getChildrenById = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
 
 // 📍 Get Location
 exports.getLocation = async (req, res) => {

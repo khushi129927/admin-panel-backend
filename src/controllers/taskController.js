@@ -49,27 +49,47 @@ exports.getTask = async (req, res) => {
 
 exports.getTaskByTaskOwner = async (req, res) => {
   try {
-    const { child_id, task_owner } = req.params;
+    const { userId, task_owner } = req.params;
 
-    if (!child_id || !task_owner) {
-      return res.status(400).json({ error: "Both child_id and task_owner are required." });
+    if (!userId || !task_owner) {
+      return res.status(400).json({ error: "Both userId and task_owner are required." });
     }
 
-    const [results] = await db.query(
-      "SELECT * FROM task WHERE child_id = ? AND task_owner = ? ORDER BY week ASC",
-      [child_id, task_owner]
+    // Step 1: Get all children of this user
+    const [childrenRows] = await db.query(
+      "SELECT childId, name FROM children WHERE userId = ?",
+      [userId]
     );
 
-    if (!results.length) {
-      return res.status(404).json({ success: false, message: "No tasks found for the given child and task owner." });
+    if (!childrenRows.length) {
+      return res.status(404).json({ success: false, message: "No children found for this user." });
     }
 
-    res.status(200).json({ success: true, data: results });
+    // Step 2: Fetch all tasks with the matching task_owner
+    const [taskRows] = await db.query(
+      "SELECT * FROM task WHERE task_owner = ? ORDER BY week ASC",
+      [task_owner]
+    );
+
+    if (!taskRows.length) {
+      return res.status(404).json({ success: false, message: "No tasks found for this task owner." });
+    }
+
+    // Step 3: Attach these tasks under each child
+    const response = childrenRows.map((child) => ({
+      childId: child.childId,
+      childName: child.name,
+      task_owner: task_owner,
+      tasks: taskRows // same set for each child, unless you want to filter further
+    }));
+
+    res.status(200).json({ success: true, data: response });
   } catch (err) {
-    console.error("❌ Task fetch error:", err.message);
-    res.status(500).json({ error: "Failed to load tasks." });
+    console.error("❌ Fetch error:", err.message);
+    res.status(500).json({ error: "Internal server error." });
   }
 };
+
 
 
 

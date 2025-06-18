@@ -47,6 +47,33 @@ exports.getTask = async (req, res) => {
   }
 };
 
+exports.getTaskByTaskOwner = async (req, res) => {
+  try {
+    const { child_id, task_owner } = req.params;
+
+    if (!child_id || !task_owner) {
+      return res.status(400).json({ error: "Both child_id and task_owner are required." });
+    }
+
+    const [results] = await db.query(
+      "SELECT * FROM task WHERE child_id = ? AND task_owner = ? ORDER BY week ASC",
+      [child_id, task_owner]
+    );
+
+    if (!results.length) {
+      return res.status(404).json({ success: false, message: "No tasks found for the given child and task owner." });
+    }
+
+    res.status(200).json({ success: true, data: results });
+  } catch (err) {
+    console.error("❌ Task fetch error:", err.message);
+    res.status(500).json({ error: "Failed to load tasks." });
+  }
+};
+
+
+
+
 exports.getTasksByWeek = async (req, res) => {
   try {
     const weekNumber = req.params.week; // e.g., "1"

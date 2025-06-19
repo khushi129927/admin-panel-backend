@@ -1,14 +1,14 @@
 // 📁 src/routes/taskRoute.js
 const express = require("express");
 const multer = require("multer");
-const { getTask, uploadTask, getTasksByWeek, getTaskByTaskOwner, assignTaskToChild, updateTaskStatus, getWeeklyTasksForUser, submitFeedback } = require("../controllers/taskController");
+const { getTask, uploadTask, getTasksByWeek, getTasksByTaskOwner, assignTaskToChild, updateTaskStatus, getWeeklyTasksForUser, submitFeedback } = require("../controllers/taskController");
 const router = express.Router();
 
 // ✅ Routes
 router.get("/get-all", getTask);
 router.post("/upload", uploadTask);
 router.get("/get/week/:week", getTasksByWeek);          // GET single task
-router.get("/:userId/:task_owner/:week", getTaskByTaskOwner);
+router.get("/:userId/:task_owner/:week", getTasksByTaskOwner);
 router.post("/assign", assignTaskToChild);     // POST assign
 router.put("/status/:taskId", updateTaskStatus);  // PUT status update
 router.get("/weekly/:userId", getWeeklyTasksForUser); // Weekly tasks

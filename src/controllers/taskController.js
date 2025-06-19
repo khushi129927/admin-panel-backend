@@ -97,10 +97,10 @@ exports.getTasksByTaskOwner = async (req, res) => {
 
       // Map age to age_group string
       let age_group = "";
-      if (age >= 3 && age <= 5) age_group = "3-5";
-      else if (age >= 6 && age <= 8) age_group = "6-8";
-      else if (age >= 9 && age <= 11) age_group = "9-11";
-      else age_group = "12+"; // or any fallback
+      if (age >= 4 && age <= 6) age_group = "4-6";
+      else if (age >= 7 && age <= 9) age_group = "7-9";
+      else if (age >= 10 && age <= 12) age_group = "10-12";
+      else age_group = "13+"; // fallback
 
       return { ...child, age, age_group };
     });

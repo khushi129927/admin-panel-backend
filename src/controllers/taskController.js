@@ -47,51 +47,67 @@ exports.getTask = async (req, res) => {
   }
 };
 
-exports.getTaskByTaskOwner = async (req, res) => {
+exports.getTasksByTaskOwner = async (req, res) => {
   try {
-    const { userId, task_owner } = req.params;
+    const { userId, task_owner, week } = req.params;
 
-    if (!userId || !task_owner) {
-      return res.status(400).json({ error: "Both userId and task_owner are required." });
+    if (!userId || !task_owner || !week) {
+      return res.status(400).json({ error: "userId, task_owner, and week are required." });
     }
 
-    // Step 1: Get all children of this user
-    const [childrenRows] = await db.query(
-      "SELECT childId, name FROM children WHERE userId = ?",
+    // Step 1: Get children of the user
+    const [children] = await db.query(
+      "SELECT childId, name, dob FROM children WHERE userId = ?",
       [userId]
     );
 
-    if (!childrenRows.length) {
+    if (!children.length) {
       return res.status(404).json({ success: false, message: "No children found for this user." });
     }
 
-    // Step 2: Fetch all tasks with the matching task_owner
-    const [taskRows] = await db.query(
-      "SELECT * FROM task WHERE task_owner = ? ORDER BY week ASC",
-      [task_owner]
-    );
+    // Step 2: Determine age and age_group for each child
+    const today = new Date();
+    const childrenWithAgeGroup = children.map(child => {
+      const dob = new Date(child.dob);
+      const age = today.getFullYear() - dob.getFullYear() - (today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
 
-    if (!taskRows.length) {
-      return res.status(404).json({ success: false, message: "No tasks found for this task owner." });
+      // Map age to age_group string
+      let age_group = "";
+      if (age >= 3 && age <= 5) age_group = "3-5";
+      else if (age >= 6 && age <= 8) age_group = "6-8";
+      else if (age >= 9 && age <= 11) age_group = "9-11";
+      else age_group = "12+"; // or any fallback
+
+      return { ...child, age, age_group };
+    });
+
+    const formattedWeek = `Week ${parseInt(week)}`;
+
+    // Step 3: For each child, fetch tasks matching their age_group, task_owner, and week
+    const data = [];
+
+    for (const child of childrenWithAgeGroup) {
+      const [tasks] = await db.query(
+        "SELECT * FROM task WHERE task_owner = ? AND week = ? AND age_group = ? ORDER BY week ASC",
+        [task_owner, formattedWeek, child.age_group]
+      );
+
+      data.push({
+        childId: child.childId,
+        name: child.name,
+        age: child.age,
+        age_group: child.age_group,
+        tasks
+      });
     }
 
-    // Step 3: Attach these tasks under each child
-    const response = childrenRows.map((child) => ({
-      childId: child.childId,
-      childName: child.name,
-      task_owner: task_owner,
-      tasks: taskRows // same set for each child, unless you want to filter further
-    }));
+    res.status(200).json({ success: true, data });
 
-    res.status(200).json({ success: true, data: response });
   } catch (err) {
-    console.error("❌ Fetch error:", err.message);
+    console.error("❌ Error:", err.message);
     res.status(500).json({ error: "Internal server error." });
   }
 };
-
-
-
 
 
 exports.getTasksByWeek = async (req, res) => {

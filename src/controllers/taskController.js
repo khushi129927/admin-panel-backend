@@ -21,20 +21,44 @@ exports.uploadTask = (req, res) => {
 
       const entries = rawData.map((row) => ([
         uuidv4(),
-        row["Week"], row["Task OWNER"], row["TASK"],
-        row["MCQ 1"], row["MCQ 2"], row["MCQ 3"],
-        row["MCQ 1 Option 1"], row["MCQ 1 Option 2"], row["MCQ 1 Option 3"], row["MCQ 1 Option 4"],
-        row["MCQ 2 Option 1"], row["MCQ 2 Option 2"], row["MCQ 2 Option 3"], row["MCQ 2 Option 4"],
-        row["MCQ 3 Option 1"], row["MCQ 3 Option 2"], row["MCQ 3 Option 3"], row["MCQ 3 Option 4"]
+        row["Week"],
+        row["Task OWNER"],
+        row["TASK"],
+        row["MCQ 1"],
+        row["MCQ 2"],
+        row["MCQ 3"],
+        row["MCQ 1 Option 1"],
+        row["MCQ 1 Option 2"],
+        row["MCQ 1 Option 3"],
+        row["MCQ 1 Option 4"],
+        row["MCQ 2 Option 1"],
+        row["MCQ 2 Option 2"],
+        row["MCQ 2 Option 3"],
+        row["MCQ 2 Option 4"],
+        row["MCQ 3 Option 1"],
+        row["MCQ 3 Option 2"],
+        row["MCQ 3 Option 3"],
+        row["MCQ 3 Option 4"],
+        row["Age Group"]  // ✅ New field
       ]));
 
-      await db.query("INSERT INTO task (taskId, week, task_owner, task, mcq1, mcq2, mcq3, mcq1_opt1, mcq1_opt2, mcq1_opt3, mcq1_opt4, mcq2_opt1, mcq2_opt2, mcq2_opt3, mcq2_opt4, mcq3_opt1, mcq3_opt2, mcq3_opt3, mcq3_opt4) VALUES ?", [entries]);
+      await db.query(`
+        INSERT INTO task (
+          taskId, week, task_owner, task, mcq1, mcq2, mcq3,
+          mcq1_opt1, mcq1_opt2, mcq1_opt3, mcq1_opt4,
+          mcq2_opt1, mcq2_opt2, mcq2_opt3, mcq2_opt4,
+          mcq3_opt1, mcq3_opt2, mcq3_opt3, mcq3_opt4,
+          age_group
+        ) VALUES ?`, [entries]);
+
       res.status(201).json({ success: true, message: `${entries.length} entries uploaded successfully.` });
     } catch (error) {
+      console.error("Upload Error:", error.message);
       res.status(500).json({ error: "Internal server error." });
     }
   });
 };
+
 
 
 // 📥 Get All Tasks

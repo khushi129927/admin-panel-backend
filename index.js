@@ -46,6 +46,7 @@ app.use(cors({
 // ✅ Serve React Build
 app.use(express.static(path.join(__dirname, "admin-panel-frontend", "build")));
 
+
 // ✅ API Routes
 app.use("/api/users", require("./src/routes/userRoute"));
 app.use("/api/task", require("./src/routes/taskRoute"));

@@ -105,7 +105,7 @@ exports.getTasksByTaskOwner = async (req, res) => {
 
   } catch (err) {
     console.error("❌ Error:", err.message);
-    res.status(500).json({ error: "Internal server error." });
+    res.status(500).json({ error: "Internal server error." , details: error.message});
   }
 };
 

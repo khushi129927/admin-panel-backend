@@ -77,8 +77,8 @@ exports.getTasksByTaskOwner = async (req, res) => {
 
     // Normalize task_owner to match DB format
     if (task_owner.toLowerCase() === "father") task_owner = "Father's Task";
-    else if (task_owner.toLowerCase() === "mother") task_owner = "Mother's Task";
-    else if (task_owner.toLowerCase() === "combined") task_owner = "Combined Task";
+else if (task_owner.toLowerCase() === "mother") task_owner = "Mother's Task";
+else if (task_owner.toLowerCase() === "combined") task_owner = "Combined Task";
 
     if (!userId || !task_owner || !week) {
       return res.status(400).json({ error: "userId, task_owner, and week are required." });
@@ -134,7 +134,7 @@ exports.getTasksByTaskOwner = async (req, res) => {
 
   } catch (err) {
     console.error("❌ Error:", err.message);
-    res.status(500).json({ error: "Internal server error." , details: error.message});
+    res.status(500).json({ error: "Internal server error." , details: err.message});
   }
 };
 

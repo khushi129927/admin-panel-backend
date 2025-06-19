@@ -73,12 +73,12 @@ exports.getTask = async (req, res) => {
 
 exports.getTasksByTaskOwner = async (req, res) => {
   try {
-    const { userId, task_owner, week } = req.params;
+    let { userId, task_owner, week } = req.params;
 
     // Normalize task_owner to match DB format
     if (task_owner.toLowerCase() === "father") task_owner = "Father's Task";
-else if (task_owner.toLowerCase() === "mother") task_owner = "Mother's Task";
-else if (task_owner.toLowerCase() === "combined") task_owner = "Combined Task";
+    else if (task_owner.toLowerCase() === "mother") task_owner = "Mother's Task";
+    else if (task_owner.toLowerCase() === "combined") task_owner = "Combined Task";
 
     if (!userId || !task_owner || !week) {
       return res.status(400).json({ error: "userId, task_owner, and week are required." });

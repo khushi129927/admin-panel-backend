@@ -75,16 +75,17 @@ exports.getTasksByTaskOwner = async (req, res) => {
   try {
     let { userId, task_owner, week } = req.params;
 
-    // Normalize task_owner to match DB format
-    if (task_owner.toLowerCase() === "father") task_owner = "Father's Task";
-    else if (task_owner.toLowerCase() === "mother") task_owner = "Mother's Task";
-    else if (task_owner.toLowerCase() === "combined") task_owner = "Combined Task";
+    // Normalize task_owner
+    task_owner = task_owner.toLowerCase();
+    if (task_owner === "father") task_owner = "Father's Task";
+    else if (task_owner === "mother") task_owner = "Mother's Task";
+    else if (task_owner === "combined") task_owner = "Combined Task";
 
     if (!userId || !task_owner || !week) {
       return res.status(400).json({ error: "userId, task_owner, and week are required." });
     }
 
-    // Step 1: Get children of the user
+    // Get children of the user
     const [children] = await db.query(
       "SELECT childId, name, dob FROM children WHERE userId = ?",
       [userId]
@@ -94,37 +95,35 @@ exports.getTasksByTaskOwner = async (req, res) => {
       return res.status(404).json({ success: false, message: "No children found for this user." });
     }
 
-    // Step 2: Determine age and age_group for each child
+    // Calculate age and assign correct age_group format
     const today = new Date();
-    const childrenWithAgeGroup = children.map(child => {
+    const childrenWithAgeGroup = children.map((child) => {
       const dob = new Date(child.dob);
-      const age = today.getFullYear() - dob.getFullYear() - (today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
+      const age = today.getFullYear() - dob.getFullYear() - 
+        (today < new Date(today.getFullYear(), dob.getMonth(), dob.getDate()) ? 1 : 0);
 
-      // Map age to age_group string
       let age_group = "";
-      if (age >= 4 && age <= 6) age_group = "4-6";
-      else if (age >= 7 && age <= 9) age_group = "7-9";
-      else if (age >= 10 && age <= 12) age_group = "10-12";
-      else age_group = "13+"; // fallback
+      if (age >= 4 && age <= 6) age_group = "4yrs to 6 yrs";
+      else if (age >= 7 && age <= 9) age_group = "7yrs to 9 yrs";
+      else if (age >= 10 && age <= 12) age_group = "10yrs to 12 yrs";
+      else age_group = "13+";
 
       return { ...child, age, age_group };
     });
 
-    // Step 3: For each child, fetch tasks matching their age_group, task_owner, and week pattern
+    const weekPattern = `Week ${parseInt(week)}%`; // Match Week 66, Week 66 - Title etc.
+
     const data = [];
 
     for (const child of childrenWithAgeGroup) {
-      const weekPattern = `Week ${parseInt(week)}%`;
-
-      // 🔍 Debug log
       console.log("Querying for:", {
         task_owner,
         weekPattern,
-        age_group: child.age_group
+        age_group: child.age_group,
       });
 
       const [tasks] = await db.query(
-        "SELECT * FROM task WHERE task_owner = ? AND week LIKE ? AND age_group = ? ORDER BY week ASC",
+        `SELECT * FROM task WHERE task_owner = ? AND week LIKE ? AND age_group = ? ORDER BY week ASC`,
         [task_owner, weekPattern, child.age_group]
       );
 
@@ -133,7 +132,7 @@ exports.getTasksByTaskOwner = async (req, res) => {
         name: child.name,
         age: child.age,
         age_group: child.age_group,
-        tasks
+        tasks,
       });
     }
 
@@ -144,6 +143,7 @@ exports.getTasksByTaskOwner = async (req, res) => {
     res.status(500).json({ error: "Internal server error.", details: err.message });
   }
 };
+
 
 
 

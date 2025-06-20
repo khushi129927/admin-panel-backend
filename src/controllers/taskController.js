@@ -110,15 +110,15 @@ exports.getTasksByTaskOwner = async (req, res) => {
       return { ...child, age, age_group };
     });
 
-    const formattedWeek = `Week ${parseInt(week)}`;
+    const weekLikePattern = `Week ${parseInt(week)}%`; // Supports Week 1, Week 1: Intro, etc.
 
     // Step 3: For each child, fetch tasks matching their age_group, task_owner, and week
     const data = [];
 
     for (const child of childrenWithAgeGroup) {
       const [tasks] = await db.query(
-        "SELECT * FROM task WHERE task_owner = ? AND week = ? AND age_group = ? ORDER BY week ASC",
-        [task_owner, formattedWeek, child.age_group]
+        "SELECT * FROM task WHERE task_owner = ? AND week LIKE ? AND age_group = ? ORDER BY week ASC",
+        [task_owner, weekLikePattern, child.age_group]
       );
 
       data.push({
@@ -134,7 +134,7 @@ exports.getTasksByTaskOwner = async (req, res) => {
 
   } catch (err) {
     console.error("❌ Error:", err.message);
-    res.status(500).json({ error: "Internal server error." , details: err.message});
+    res.status(500).json({ error: "Internal server error.", details: err.message });
   }
 };
 

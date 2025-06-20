@@ -95,7 +95,7 @@ exports.getTasksByTaskOwner = async (req, res) => {
       return res.status(404).json({ success: false, message: "No children found for this user." });
     }
 
-    // Calculate age and assign correct age_group format
+    // Determine age_group from age
     const today = new Date();
     const childrenWithAgeGroup = children.map((child) => {
       const dob = new Date(child.dob);
@@ -111,22 +111,16 @@ exports.getTasksByTaskOwner = async (req, res) => {
       return { ...child, age, age_group };
     });
 
-   const weekPattern = `^Week ${parseInt(week)}[^0-9]`; // For REGEXP
+    // Construct exact week string
+    const exactWeek = `Week ${parseInt(week)}`;
 
     const data = [];
 
     for (const child of childrenWithAgeGroup) {
-      console.log("Querying for:", {
-        task_owner,
-        weekPattern,
-        age_group: child.age_group,
-      });
-
       const [tasks] = await db.query(
-      "SELECT * FROM task WHERE task_owner = ? AND week REGEXP ? AND age_group = ? ORDER BY week ASC",
-      [task_owner, weekPattern, child.age_group]
+        "SELECT * FROM task WHERE task_owner = ? AND week = ? AND age_group = ? ORDER BY week ASC",
+        [task_owner, exactWeek, child.age_group]
       );
-
 
       data.push({
         childId: child.childId,
@@ -144,9 +138,6 @@ exports.getTasksByTaskOwner = async (req, res) => {
     res.status(500).json({ error: "Internal server error.", details: err.message });
   }
 };
-
-
-
 
 
 exports.getTasksByWeek = async (req, res) => {

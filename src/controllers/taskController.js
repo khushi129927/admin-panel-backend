@@ -111,7 +111,7 @@ exports.getTasksByTaskOwner = async (req, res) => {
       return { ...child, age, age_group };
     });
 
-    const weekPattern = `Week ${parseInt(week)}%`; // Match Week 66, Week 66 - Title etc.
+   const weekPattern = `^Week ${parseInt(week)}[^0-9]`; // For REGEXP
 
     const data = [];
 
@@ -123,9 +123,10 @@ exports.getTasksByTaskOwner = async (req, res) => {
       });
 
       const [tasks] = await db.query(
-        `SELECT * FROM task WHERE task_owner = ? AND week LIKE ? AND age_group = ? ORDER BY week ASC`,
-        [task_owner, weekPattern, child.age_group]
+      "SELECT * FROM task WHERE task_owner = ? AND week REGEXP ? AND age_group = ? ORDER BY week ASC",
+      [task_owner, weekPattern, child.age_group]
       );
+
 
       data.push({
         childId: child.childId,

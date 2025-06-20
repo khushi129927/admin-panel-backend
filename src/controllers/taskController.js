@@ -77,9 +77,10 @@ exports.getTasksByTaskOwner = async (req, res) => {
 
     // Normalize task_owner
     task_owner = task_owner.toLowerCase();
-    if (task_owner === "father") task_owner = "Father's Task";
-    else if (task_owner === "mother") task_owner = "Mother's Task";
+    if (task_owner === "father") task_owner = "Father’s Task"; // ← notice the curly ’
+    else if (task_owner === "mother") task_owner = "Mother’s Task";
     else if (task_owner === "combined") task_owner = "Combined Task";
+
 
     if (!userId || !task_owner || !week) {
       return res.status(400).json({ error: "userId, task_owner, and week are required." });

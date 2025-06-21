@@ -27,6 +27,7 @@ const initUserInheritance = async () => {
         dob DATE,
         gender VARCHAR(10),
         school VARCHAR(255),
+        standard VARCHAR(50),
         grades VARCHAR(50),
         hobbies TEXT,
         dream_career VARCHAR(255),

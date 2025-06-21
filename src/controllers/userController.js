@@ -91,10 +91,19 @@ exports.createChild = async (req, res) => {
     userId, // parentId
   } = req.body;
 
-  // Check for mandatory fields
-  if (!userId || !name || !dob || !gender || !school || !standard || !grades) {
+  // Collect missing fields
+  const missingFields = [];
+  if (!userId) missingFields.push("userId");
+  if (!name) missingFields.push("name");
+  if (!dob) missingFields.push("dob");
+  if (!gender) missingFields.push("gender");
+  if (!school) missingFields.push("school");
+  if (!standard) missingFields.push("standard");
+  if (!grades) missingFields.push("grades");
+
+  if (missingFields.length > 0) {
     return res.status(400).json({
-      error: "Fields 'name', 'dob', 'gender', 'school', 'standard', 'grades', and 'userId' are required.",
+      error: `Missing required field(s): ${missingFields.join(", ")}`,
     });
   }
 
@@ -144,6 +153,7 @@ exports.createChild = async (req, res) => {
 };
 
 
+
 // 🔁 Update Parent
 exports.updateParent = async (req, res) => {
   const {
@@ -159,32 +169,41 @@ exports.updateParent = async (req, res) => {
   } = req.body;
 
   const userId = req.params.id;
+  const profileComplete = req.query.profileComplete === "true"; // <- Flag from frontend
+
   if (!userId) {
     return res.status(400).json({ error: "User ID is required in params." });
   }
 
   try {
-    // Fetch existing user data
-    const [userRows] = await db.execute("SELECT * FROM users WHERE userId = ? AND type = ?", [userId, 'parent']);
+    const [userRows] = await db.execute(
+      "SELECT * FROM users WHERE userId = ? AND type = ?",
+      [userId, 'parent']
+    );
     if (userRows.length === 0) {
       return res.status(403).json({ error: "Invalid user or not a parent." });
     }
 
     const existingUser = userRows[0];
 
-    // Only check for duplicate email if the user actually changed the email
-if (email && email !== existingUser.email) {
-  const [emailRows] = await db.execute(
-    "SELECT * FROM users WHERE email = ? AND userId != ?",
-    [email, userId]
-  );
-  if (emailRows.length > 0) {
-    return res.status(400).json({ error: "This email is already used by another user." });
-  }
-}
+    // ✅ Only check these fields if profile completion flag is set
+    if (profileComplete) {
+      if (!dob || !gender) {
+        return res.status(400).json({ error: "DOB and Gender are required to complete the profile." });
+      }
+    }
 
+    if (email && email !== existingUser.email) {
+      const [emailRows] = await db.execute(
+        "SELECT * FROM users WHERE email = ? AND userId != ?",
+        [email, userId]
+      );
+      if (emailRows.length > 0) {
+        return res.status(400).json({ error: "This email is already used by another user." });
+      }
+    }
 
-    // Determine final values
+    // Use fallback values
     const finalName = name === undefined || name === "" ? existingUser.name : name;
     const finalDob = dob === undefined || dob === "" ? existingUser.dob : dob;
     const finalEmail = email === undefined || email === "" ? existingUser.email : email;
@@ -195,7 +214,6 @@ if (email && email !== existingUser.email) {
     const finalFavFood = favourite_food === undefined || favourite_food === "" ? existingUser.favourite_food : favourite_food;
     const finalPassword = password ? await bcrypt.hash(password, 10) : existingUser.password;
 
-    // Update users table
     await db.execute(
       `UPDATE users SET 
         name = ?, dob = ?, email = ?, gender = ?, education = ?, 
@@ -216,7 +234,6 @@ if (email && email !== existingUser.email) {
       ]
     );
 
-    // Fetch and return updated parent
     const [updatedParent] = await db.execute("SELECT * FROM users WHERE userId = ?", [userId]);
     res.json({
       success: true,

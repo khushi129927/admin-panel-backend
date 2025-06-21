@@ -30,7 +30,25 @@ exports.submitTestScore = async (req, res) => {
       });
     }
 
-    // 2. Calculate score
+    // 2. Get all test questions for the age and quarter
+    const [allTests] = await db.execute(
+      "SELECT testId FROM tests WHERE age = ? AND quarter = ?",
+      [age, quarter]
+    );
+    const requiredTestIds = allTests.map((t) => t.testId);
+
+    // 3. Ensure all required questions are answered
+    const answeredTestIds = answers.map((a) => a.testId);
+    const unanswered = requiredTestIds.filter(id => !answeredTestIds.includes(id));
+
+    if (unanswered.length > 0) {
+      return res.status(400).json({
+        error: "Please answer all the questions before submitting the test.",
+        missingTestIds: unanswered
+      });
+    }
+
+    // 4. Calculate score
     let totalScore = 0;
     for (const answer of answers) {
       const [rows] = await db.execute(
@@ -46,7 +64,7 @@ exports.submitTestScore = async (req, res) => {
       totalScore += Number(points) || 0;
     }
 
-    // 3. Save result
+    // 5. Save result
     const scoreId = uuidv4();
     await db.execute(
       `INSERT INTO test_scores (scoreId, childId, age, quarter, totalScore, submitted_at)
@@ -64,6 +82,7 @@ exports.submitTestScore = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
 
 
 

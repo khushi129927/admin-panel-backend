@@ -2,6 +2,9 @@ const db = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 
 // ➕ Save Test Score
+const { v4: uuidv4 } = require("uuid");
+const db = require("../config/db");
+
 exports.submitTestScore = async (req, res) => {
   const { childId, age, quarter, answers } = req.body;
 
@@ -30,27 +33,19 @@ exports.submitTestScore = async (req, res) => {
       });
     }
 
-    // 2. Get all test questions for the age and quarter
-    const [allTests] = await db.execute(
-      "SELECT testId FROM tests WHERE age = ? AND quarter = ?",
-      [age, quarter]
-    );
-    const requiredTestIds = allTests.map((t) => t.testId);
-
-    // 3. Ensure all required questions are answered
-    const answeredTestIds = answers.map((a) => a.testId);
-    const unanswered = requiredTestIds.filter(id => !answeredTestIds.includes(id));
-
-    if (unanswered.length > 0) {
-      return res.status(400).json({
-        error: "Please answer all the questions before submitting the test.",
-        missingTestIds: unanswered
-      });
-    }
-
-    // 4. Calculate score
+    // 2. Validate and calculate score
     let totalScore = 0;
+
     for (const answer of answers) {
+      const selectedOption = answer.selectedOption;
+
+      // Check if one valid option is selected
+      if (!["1", "2", "3", "4"].includes(selectedOption)) {
+        return res.status(400).json({
+          error: `Each question must have one selected option between 1 to 4. Missing or invalid selection for testId: ${answer.testId}`,
+        });
+      }
+
       const [rows] = await db.execute(
         "SELECT * FROM tests WHERE testId = ?",
         [answer.testId]
@@ -58,13 +53,11 @@ exports.submitTestScore = async (req, res) => {
       if (!rows.length) continue;
 
       const test = rows[0];
-      const selectedOption = answer.selectedOption;
-
       const points = test[`points${selectedOption}`];
       totalScore += Number(points) || 0;
     }
 
-    // 5. Save result
+    // 3. Save score
     const scoreId = uuidv4();
     await db.execute(
       `INSERT INTO test_scores (scoreId, childId, age, quarter, totalScore, submitted_at)
@@ -82,6 +75,7 @@ exports.submitTestScore = async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 };
+
 
 
 

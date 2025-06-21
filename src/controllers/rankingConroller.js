@@ -1,23 +1,48 @@
 // controller/rankingController.js
 const db = require("../config/db");
 
-exports.getCombinedChildRanks = async (req, res) => {
+// controller/rankingController.js
+const db = require("../config/db");
+
+exports.getCombinedChildRanksByUserId = async (req, res) => {
+  const { userId } = req.params;
+
+  if (!userId) {
+    return res.status(400).json({ error: "Missing userId parameter." });
+  }
+
   try {
-    // 1. Get total test scores per child
+    // 1. Get all children of this user
+    const [children] = await db.execute(
+      `SELECT childId, name FROM children WHERE userId = ?`,
+      [userId]
+    );
+
+    if (!children.length) {
+      return res.status(404).json({ message: "No children found for this user." });
+    }
+
+    const childIds = children.map(c => c.childId);
+
+    // 2. Get test scores for user's children
     const [testScores] = await db.execute(
       `SELECT childId, SUM(totalScore) AS testScore 
        FROM test_scores 
-       GROUP BY childId`
+       WHERE childId IN (${childIds.map(() => "?").join(",")})
+       GROUP BY childId`,
+      childIds
     );
 
-    // 2. Get total task scores per child
+    // 3. Get task scores for user's children
     const [taskScores] = await db.execute(
       `SELECT childId, SUM(totalScore) AS taskScore 
        FROM task_scores 
-       GROUP BY childId`
+       WHERE childId IN (${childIds.map(() => "?").join(",")})
+       GROUP BY childId`,
+      childIds
     );
 
-    // 3. Merge scores by childId
+    // 4. Merge scores
     const scoreMap = {};
 
     testScores.forEach(({ childId, testScore }) => {
@@ -32,27 +57,22 @@ exports.getCombinedChildRanks = async (req, res) => {
       }
     });
 
-    // 4. Convert to array and calculate total score
     const combinedScores = Object.values(scoreMap).map((item) => ({
       ...item,
       totalScore: item.testScore + item.taskScore,
+      name: children.find(c => c.childId === item.childId)?.name || "Unknown"
     }));
 
-    // 5. Sort by totalScore descending and assign ranks
+    // 5. Sort and rank
     combinedScores.sort((a, b) => b.totalScore - a.totalScore);
     combinedScores.forEach((item, index) => {
       item.rank = index + 1;
     });
 
-    // 6. Get child names for better display
-    for (const item of combinedScores) {
-      const [child] = await db.execute("SELECT name FROM children WHERE childId = ?", [item.childId]);
-      item.name = child[0]?.name || "Unknown";
-    }
-
     res.status(200).json({ success: true, data: combinedScores });
+
   } catch (err) {
-    console.error("❌ Error calculating ranks:", err);
-    res.status(500).json({ error: "Failed to calculate ranks." });
+    console.error("❌ Error:", err);
+    res.status(500).json({ error: "Failed to get child ranks." });
   }
 };

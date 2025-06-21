@@ -24,6 +24,6 @@ router.post("/:id/update-location", updateLocation);
 router.get("/get-all-users", getUsers);
 
 // 🏆Ranking
-router.get("/child-rankings", getCombinedChildRanks);
+router.get("/child-rankings/:userId", getCombinedChildRanks);
 
 module.exports = router;

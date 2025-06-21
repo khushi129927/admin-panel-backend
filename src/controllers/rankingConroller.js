@@ -1,9 +1,6 @@
 // controller/rankingController.js
 const db = require("../config/db");
 
-// controller/rankingController.js
-const db = require("../config/db");
-
 exports.getCombinedChildRanksByUserId = async (req, res) => {
   const { userId } = req.params;
 

@@ -32,8 +32,6 @@ exports.loginUser = async (req, res) => {
   }
 };
 
-const jwt = require("jsonwebtoken");
-
 exports.createParent = async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
 

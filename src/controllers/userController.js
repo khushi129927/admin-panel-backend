@@ -231,6 +231,7 @@ exports.updateChild = async (req, res) => {
     email,
     gender,
     school,
+    standard,
     grades,
     hobbies,
     dream_career,
@@ -287,13 +288,14 @@ exports.updateChild = async (req, res) => {
     // Step 4: Update children table
     await db.execute(
       `UPDATE children SET 
-        name = ?, gender = ?, school = ?, grades = ?, hobbies = ?, 
+        name = ?, gender = ?, school = ?, standard = ?, grades = ?, hobbies = ?, 
         dream_career = ?, favourite_sports = ?, blood_group = ?
       WHERE childId = ?`,
       [
         safe(name, existingChild.name),
         safe(gender, existingChild.gender),
         safe(school, existingChild.school),
+        safe(standard, existingChild.standard),
         safe(grades, existingChild.grades),
         safe(hobbies, existingChild.hobbies),
         safe(dream_career, existingChild.dream_career),

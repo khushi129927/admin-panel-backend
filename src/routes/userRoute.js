@@ -8,26 +8,23 @@ const auth = require("../middleware/authMiddleware");
 router.post("/register", createParent);
 router.post("/login", loginUser);
 
-// 🔐 Protect all routes below this line
-router.use(auth);
-
 // 👨‍👩 Parent/Child
-router.post("/create-parent", createParent);
-router.post("/create-child", createChild);
-router.put("/update-parent/:id", updateParent);
-router.put("/update-child/:childId", updateChild);
-router.get("/parent/:id/get-children", getChildren);
-router.get("/:childId/get-children", getChildrenById);
-router.get("/:userId/get-parent", getParentById);
+router.post("/create-parent", auth, createParent);
+router.post("/create-child", auth, createChild);
+router.put("/update-parent/:id", auth, updateParent);
+router.put("/update-child/:childId", auth, updateChild);
+router.get("/parent/:id/get-children", auth, getChildren);
+router.get("/:childId/get-children", auth, getChildrenById);
+router.get("/:userId/get-parent", auth, getParentById);
 
 // 📍 Location
-router.get("/:id/get-location", getLocation);
-router.post("/:id/update-location", updateLocation);
+router.get("/:id/get-location", auth, getLocation);
+router.post("/:id/update-location", auth, updateLocation);
 
 // 📤 All users (parent + child)
 router.get("/get-all-users", getUsers);
 
 // 🏆Ranking
-router.get("/child-rankings/:userId", getCombinedChildRanksByUserId);
+router.get("/child-rankings/:userId", auth, getCombinedChildRanksByUserId);
 
 module.exports = router;

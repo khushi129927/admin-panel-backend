@@ -8,7 +8,7 @@ const upload = multer({ storage });
 const auth = require("../middleware/authMiddleware");
 
 // in routes/testRoute.js
-router.post("/upload", auth, uploadTestQuestions);
+router.post("/upload", uploadTestQuestions);
 
 router.get("/get-all", auth, getTests);
 router.get("/get-test-by-age/:age", auth, getTestsByAge);

@@ -6,8 +6,8 @@ const router = express.Router();
 const auth = require("../middleware/authMiddleware");
 
 // ✅ Routes
-router.get("/get-all", auth, getTask);
-router.post("/upload", auth, uploadTask);
+router.get("/get-all", getTask);
+router.post("/upload", uploadTask);
 router.get("/get/week/:week", auth, getTasksByWeek);          // GET single task
 router.get("/:userId/:task_owner/:week", auth, getTasksByTaskOwner);
 router.post("/assign", auth, assignTaskToChild);     // POST assign

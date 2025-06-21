@@ -82,6 +82,7 @@ exports.createChild = async (req, res) => {
     password,
     gender,
     school,
+    standard,
     grades,
     hobbies,
     dream_career,
@@ -90,8 +91,11 @@ exports.createChild = async (req, res) => {
     userId, // parentId
   } = req.body;
 
-  if (!userId) {
-    return res.status(400).json({ error: "userId (parentId) is required." });
+  // Check for mandatory fields
+  if (!userId || !name || !dob || !gender || !school || !standard || !grades) {
+    return res.status(400).json({
+      error: "Fields 'name', 'dob', 'gender', 'school', 'standard', 'grades', and 'userId' are required.",
+    });
   }
 
   try {
@@ -102,7 +106,6 @@ exports.createChild = async (req, res) => {
       hashedPassword = await bcrypt.hash(password, 10);
     }
 
-    // Insert into users even if email or password is missing
     await db.execute(
       "INSERT INTO users (userId, email, password, type) VALUES (?, ?, ?, ?)",
       [childId, email || null, hashedPassword, "child"]
@@ -110,16 +113,17 @@ exports.createChild = async (req, res) => {
 
     await db.execute(
       `INSERT INTO children (
-        childId, name, dob, gender, school, grades, hobbies,
+        childId, name, dob, gender, school, standard, grades, hobbies,
         dream_career, favourite_sports, blood_group, userId
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         childId,
-        name || null,
-        dob || null,
-        gender || null,
-        school || null,
-        grades || null,
+        name,
+        dob,
+        gender,
+        school,
+        standard,
+        grades,
         hobbies || null,
         dream_career || null,
         favourite_sports || null,
@@ -138,6 +142,7 @@ exports.createChild = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // 🔁 Update Parent
 exports.updateParent = async (req, res) => {

@@ -1,10 +1,6 @@
 const db = require("../config/db");
 const { v4: uuidv4 } = require("uuid");
 
-// ➕ Save Test Score
-const { v4: uuidv4 } = require("uuid");
-const db = require("../config/db");
-
 exports.submitTestScore = async (req, res) => {
   const { childId, age, quarter, answers } = req.body;
 

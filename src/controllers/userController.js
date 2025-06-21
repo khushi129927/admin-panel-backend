@@ -32,11 +32,12 @@ exports.loginUser = async (req, res) => {
   }
 };
 
+const jwt = require("jsonwebtoken");
+
 exports.createParent = async (req, res) => {
   const { name, email, password, confirmPassword } = req.body;
 
   try {
-    // Ensure all required fields are present
     if (!name || !email || !password || !confirmPassword) {
       return res.status(400).json({ error: "Name, email, and both password fields are required." });
     }
@@ -58,6 +59,11 @@ exports.createParent = async (req, res) => {
       [userId, name, email, hashedPassword, "parent"]
     );
 
+    // 🔐 Generate token right after registration
+    const token = jwt.sign({ id: userId, email, type: "parent" }, process.env.JWT_SECRET, {
+      expiresIn: "1h",
+    });
+
     res.status(201).json({
       success: true,
       message: "Parent created successfully",
@@ -66,12 +72,14 @@ exports.createParent = async (req, res) => {
         name,
         email,
       },
+      token // Return token
     });
   } catch (error) {
     console.error("❌ Create Parent Error:", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 // 👧 Create Child
 exports.createChild = async (req, res) => {

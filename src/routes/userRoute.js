@@ -2,10 +2,14 @@ const express = require("express");
 const router = express.Router();
 const {loginUser, createParent, createChild, updateParent, updateChild, getChildren, getChildrenById, getLocation, updateLocation, getUsers, getParentById} = require("../controllers/userController");
 const {getCombinedChildRanksByUserId} = require("../controllers/rankingConroller")
+const auth = require("../middleware/authMiddleware");
 
 // 🔐 Auth
 router.post("/register", createParent);
 router.post("/login", loginUser);
+
+// 🔐 Protect all routes below this line
+router.use(auth);
 
 // 👨‍👩 Parent/Child
 router.post("/create-parent", createParent);

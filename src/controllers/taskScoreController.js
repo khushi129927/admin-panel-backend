@@ -93,11 +93,11 @@ exports.submitTaskScore = [
 
       const assignmentId = uuidv4();
       await db.execute(
-        `INSERT INTO task_assignments (id, taskId, userId, status, completed_at)
-         VALUES (?, ?, ?, 'completed', NOW())
-         ON DUPLICATE KEY UPDATE status = 'completed', completed_at = NOW()`,
-        [assignmentId, taskId, childId]
-      );
+  `INSERT INTO task_assignments (id, taskId, childId, status, completed_at)
+   VALUES (?, ?, ?, 'completed', NOW())
+   ON DUPLICATE KEY UPDATE status = 'completed', completed_at = NOW()`,
+  [assignmentId, taskId, childId]
+);
 
       res.status(200).json({
         success: true,

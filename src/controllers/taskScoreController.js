@@ -73,7 +73,7 @@ exports.submitTaskScore = [
         `SELECT * FROM task_scores 
          WHERE childId = ? AND taskId = ?  
          AND taskOwner = ?`,
-        [childId, taskId, userId, task_owner, age_group, week]
+        [childId, taskId, userId, task_owner]
       );
 
       if (existing.length > 0) {

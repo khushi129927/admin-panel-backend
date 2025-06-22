@@ -10,7 +10,7 @@ router.get("/get-all", getTask);
 router.post("/upload", uploadTask);
 router.get("/get/week/:week", auth, getTasksByWeek);          // GET single task
 router.get("/:userId/:task_owner/:week", auth, getTasksByTaskOwner);
-router.get("/completed-tasks/:childId/:taskOwner", auth, getCompletedTasksByOwnerAndChild);
+router.get("/completed-tasks/:childId", auth, getCompletedTasksByOwnerAndChild);
 router.post("/assign", auth, assignTaskToChild);     // POST assign
 router.put("/status/:taskId", auth, updateTaskStatus);  // PUT status update
 router.get("/weekly/:userId", auth, getWeeklyTasksForUser); // Weekly tasks

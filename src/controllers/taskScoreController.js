@@ -5,7 +5,6 @@ const upload = require("../middleware/upload");
 
 
 exports.submitTaskScore = [
-  // Accept image and video optionally
   upload.fields([
     { name: "image", maxCount: 1 },
     { name: "video", maxCount: 1 }
@@ -15,23 +14,19 @@ exports.submitTaskScore = [
       const childId = req.body.childId?.trim();
       const taskId = req.body.taskId?.trim();
       const task_owner = req.body.task_owner?.trim();
-      const comment = req.body.comment?.trim() || null;
+      const mode = req.body.mode?.trim(); // "markOnly" or undefined
 
-      const mcq1 = req.body.mcq1;
-      const mcq2 = req.body.mcq2;
-      const mcq3 = req.body.mcq3;
-
-      if (!childId || !taskId || !task_owner || !mcq1 || !mcq2 || !mcq3) {
+      if (!childId || !taskId || !task_owner) {
         return res.status(400).json({ error: "Missing required fields." });
       }
 
-      // ✅ Validate child
+      // ✅ Validate child exists
       const [childRows] = await db.execute(`SELECT * FROM children WHERE childId = ?`, [childId]);
       if (childRows.length === 0) {
         return res.status(404).json({ error: "Child not found." });
       }
 
-      // ✅ Validate task and owner
+      // ✅ Validate task exists and owner matches
       const [taskRows] = await db.execute(`SELECT * FROM task WHERE taskId = ?`, [taskId]);
       if (taskRows.length === 0) {
         return res.status(404).json({ error: "Task not found." });
@@ -39,7 +34,6 @@ exports.submitTaskScore = [
 
       const task = taskRows[0];
       const normalizeOwner = (text) => text?.toLowerCase().replace(/[^a-z]/gi, "").trim();
-
       const dbTaskOwner = normalizeOwner(task.task_owner);
       const inputOwner = normalizeOwner(task_owner);
       const allowedMatches = {
@@ -52,7 +46,29 @@ exports.submitTaskScore = [
         return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
       }
 
-      // ✅ Prevent duplicate
+      // ✅ If mode is "markOnly" → skip MCQs and save only task_assignments entry
+      if (mode === "markOnly") {
+        const assignmentId = uuidv4();
+        await db.execute(
+          `INSERT INTO task_assignments (id, taskId, childId, status, completed_at)
+           VALUES (?, ?, ?, 'completed', NOW())
+           ON DUPLICATE KEY UPDATE status = 'completed', completed_at = NOW()`,
+          [assignmentId, taskId, childId]
+        );
+
+        return res.status(200).json({ success: true, message: "Task marked as completed without MCQs." });
+      }
+
+      // ✅ Full submission
+      const mcq1 = req.body.mcq1;
+      const mcq2 = req.body.mcq2;
+      const mcq3 = req.body.mcq3;
+      const comment = req.body.comment?.trim() || null;
+
+      if (!mcq1 || !mcq2 || !mcq3) {
+        return res.status(400).json({ error: "MCQ answers are required in full submission." });
+      }
+
       const [existing] = await db.execute(
         `SELECT 1 FROM task_scores WHERE childId = ? AND taskId = ?`,
         [childId, taskId]
@@ -61,7 +77,6 @@ exports.submitTaskScore = [
         return res.status(409).json({ error: "Task already submitted for this child." });
       }
 
-      // ✅ Score calculation
       let totalScore = 0;
       for (const selected of [mcq1, mcq2, mcq3]) {
         const optText = task[selected];
@@ -71,11 +86,9 @@ exports.submitTaskScore = [
         }
       }
 
-      // ✅ Optional file inputs
       const image_url = req.files?.image?.[0]?.path || null;
       const video_url = req.files?.video?.[0]?.path || null;
 
-      // ✅ Save task score
       const taskScoreId = uuidv4();
       await TaskScore.createTaskScore(
         taskScoreId,
@@ -91,7 +104,6 @@ exports.submitTaskScore = [
         video_url
       );
 
-      // ✅ Mark as completed in task_assignments
       const assignmentId = uuidv4();
       await db.execute(
         `INSERT INTO task_assignments (id, taskId, childId, status, completed_at)
@@ -102,6 +114,7 @@ exports.submitTaskScore = [
 
       res.status(200).json({
         success: true,
+        message: "Task submitted successfully.",
         totalScore,
         comment,
         image_url,
@@ -114,6 +127,7 @@ exports.submitTaskScore = [
     }
   }
 ];
+
 
 
 

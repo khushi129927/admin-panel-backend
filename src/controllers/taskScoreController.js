@@ -20,13 +20,11 @@ exports.submitTaskScore = [
         return res.status(400).json({ error: "Missing required fields." });
       }
 
-      // ✅ Validate child exists
       const [childRows] = await db.execute(`SELECT * FROM children WHERE childId = ?`, [childId]);
       if (childRows.length === 0) {
         return res.status(404).json({ error: "Child not found." });
       }
 
-      // ✅ Validate task exists and owner matches
       const [taskRows] = await db.execute(`SELECT * FROM task WHERE taskId = ?`, [taskId]);
       if (taskRows.length === 0) {
         return res.status(404).json({ error: "Task not found." });
@@ -46,49 +44,43 @@ exports.submitTaskScore = [
         return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
       }
 
-      // ✅ If mode is "markOnly" → skip MCQs and save only task_assignments entry
-      if (mode === "markOnly") {
-        const assignmentId = uuidv4();
-        await db.execute(
-          `INSERT INTO task_assignments (id, taskId, childId, status, completed_at)
-           VALUES (?, ?, ?, 'completed', NOW())
-           ON DUPLICATE KEY UPDATE status = 'completed', completed_at = NOW()`,
-          [assignmentId, taskId, childId]
-        );
-
-        return res.status(200).json({ success: true, message: "Task marked as completed without MCQs." });
-      }
-
-      // ✅ Full submission
-      const mcq1 = req.body.mcq1;
-      const mcq2 = req.body.mcq2;
-      const mcq3 = req.body.mcq3;
-      const comment = req.body.comment?.trim() || null;
-
-      if (!mcq1 || !mcq2 || !mcq3) {
-        return res.status(400).json({ error: "MCQ answers are required in full submission." });
-      }
-
+      // ✅ Check existing task_score
       const [existing] = await db.execute(
-        `SELECT 1 FROM task_scores WHERE childId = ? AND taskId = ?`,
+        `SELECT totalScore FROM task_scores WHERE childId = ? AND taskId = ?`,
         [childId, taskId]
       );
-      if (existing.length > 0) {
-        return res.status(409).json({ error: "Task already submitted for this child." });
+      if (existing.length > 0 && existing[0].totalScore > 0) {
+        return res.status(409).json({ error: "Task already submitted with a score greater than 0." });
       }
 
       let totalScore = 0;
-      for (const selected of [mcq1, mcq2, mcq3]) {
-        const optText = task[selected];
-        const match = optText?.match(/\((\d+)\s*points\)/i);
-        if (match) {
-          totalScore += parseInt(match[1], 10);
+      let mcq1 = null, mcq2 = null, mcq3 = null;
+      const comment = req.body.comment?.trim() || null;
+
+      // ✅ If full submission
+      if (mode !== "markOnly") {
+        mcq1 = req.body.mcq1;
+        mcq2 = req.body.mcq2;
+        mcq3 = req.body.mcq3;
+
+        if (!mcq1 || !mcq2 || !mcq3) {
+          return res.status(400).json({ error: "MCQ answers are required in full submission." });
+        }
+
+        for (const selected of [mcq1, mcq2, mcq3]) {
+          const optText = task[selected];
+          const match = optText?.match(/\((\d+)\s*points\)/i);
+          if (match) {
+            totalScore += parseInt(match[1], 10);
+          }
         }
       }
 
+      // ✅ Optional file inputs
       const image_url = req.files?.image?.[0]?.path || null;
       const video_url = req.files?.video?.[0]?.path || null;
 
+      // ✅ Insert task score
       const taskScoreId = uuidv4();
       await TaskScore.createTaskScore(
         taskScoreId,
@@ -104,6 +96,7 @@ exports.submitTaskScore = [
         video_url
       );
 
+      // ✅ Mark task as completed
       const assignmentId = uuidv4();
       await db.execute(
         `INSERT INTO task_assignments (id, taskId, childId, status, completed_at)
@@ -114,9 +107,9 @@ exports.submitTaskScore = [
 
       res.status(200).json({
         success: true,
-        message: "Task submitted successfully.",
+        mode: mode || "full",
+        message: mode === "markOnly" ? "Task marked as completed." : "Task submitted with score.",
         totalScore,
-        comment,
         image_url,
         video_url
       });
@@ -127,7 +120,6 @@ exports.submitTaskScore = [
     }
   }
 ];
-
 
 
 

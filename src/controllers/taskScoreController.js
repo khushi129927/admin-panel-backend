@@ -71,7 +71,7 @@ exports.submitTaskScore = [
       // 🔍 Check for any previous task_score
       const [existing] = await db.execute(
         `SELECT * FROM task_scores 
-         WHERE childId = ? AND taskId = ? AND userId = ? 
+         WHERE childId = ? AND taskId = ?  
          AND task_owner = ? AND age_group = ? AND week = ?`,
         [childId, taskId, userId, task_owner, age_group, week]
       );

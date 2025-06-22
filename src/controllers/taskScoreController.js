@@ -97,12 +97,14 @@ if (allowedMatches[inputOwner] !== dbTaskOwner) {
       );
 
       // ✅ Mark the task as completed in task_assignment
-      await db.execute(
-  `UPDATE task_assignments 
-   SET status = 'completed' 
-   WHERE taskId = ? AND userId = ?`,
-  [taskId, childId]
+      const assignmentId = uuidv4();
+await db.execute(
+  `INSERT INTO task_assignments (id, taskId, userId, status, completed_at)
+   VALUES (?, ?, ?, 'completed', NOW())
+   ON DUPLICATE KEY UPDATE status = 'completed', completed_at = NOW()`,
+  [assignmentId, taskId, childId]
 );
+
 
 
       res.status(200).json({

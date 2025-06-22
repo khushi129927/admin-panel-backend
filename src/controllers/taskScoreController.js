@@ -3,10 +3,16 @@ const db = require("../config/db");
 const TaskScore = require("../models/taskScoreModel");
 const upload = require("../middleware/upload");
 
+const { v4: uuidv4 } = require("uuid");
+const db = require("../config/db");
+const TaskScore = require("../models/taskScoreModel");
+const upload = require("../middleware/upload");
+
 exports.submitTaskScore = [
+  // Accept image and video optionally
   upload.fields([
     { name: "image", maxCount: 1 },
-    { name: "video", maxCount: 1 },
+    { name: "video", maxCount: 1 }
   ]),
   async (req, res) => {
     try {
@@ -18,44 +24,39 @@ exports.submitTaskScore = [
       const mcq1 = req.body.mcq1;
       const mcq2 = req.body.mcq2;
       const mcq3 = req.body.mcq3;
-      const answers = { mcq1, mcq2, mcq3 };
 
       if (!childId || !taskId || !task_owner || !mcq1 || !mcq2 || !mcq3) {
         return res.status(400).json({ error: "Missing required fields." });
       }
 
-      // ✅ Validate child exists
+      // ✅ Validate child
       const [childRows] = await db.execute(`SELECT * FROM children WHERE childId = ?`, [childId]);
       if (childRows.length === 0) {
         return res.status(404).json({ error: "Child not found." });
       }
 
-      // ✅ Validate task exists and task_owner matches
+      // ✅ Validate task and owner
       const [taskRows] = await db.execute(`SELECT * FROM task WHERE taskId = ?`, [taskId]);
       if (taskRows.length === 0) {
         return res.status(404).json({ error: "Task not found." });
       }
 
       const task = taskRows[0];
-      const normalizeOwner = (text) => {
-      return text?.toLowerCase().replace(/[^a-z]/gi, "").trim(); // removes spaces, apostrophes etc.
+      const normalizeOwner = (text) => text?.toLowerCase().replace(/[^a-z]/gi, "").trim();
+
+      const dbTaskOwner = normalizeOwner(task.task_owner);
+      const inputOwner = normalizeOwner(task_owner);
+      const allowedMatches = {
+        father: "fatherstask",
+        mother: "motherstask",
+        combined: "combinedtask"
       };
 
-      const dbTaskOwner = normalizeOwner(task.task_owner);   // e.g., "Father's Task" → "fatherstask"
-      const inputOwner = normalizeOwner(task_owner);         // e.g., "father" → "father"
+      if (allowedMatches[inputOwner] !== dbTaskOwner) {
+        return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
+      }
 
-const allowedMatches = {
-  father: "fatherstask",
-  mother: "motherstask",
-  combined: "combinedtask"
-};
-
-if (allowedMatches[inputOwner] !== dbTaskOwner) {
-  return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
-}
-
-
-      // ✅ Prevent duplicate submissions
+      // ✅ Prevent duplicate
       const [existing] = await db.execute(
         `SELECT 1 FROM task_scores WHERE childId = ? AND taskId = ?`,
         [childId, taskId]
@@ -64,23 +65,21 @@ if (allowedMatches[inputOwner] !== dbTaskOwner) {
         return res.status(409).json({ error: "Task already submitted for this child." });
       }
 
-      // ✅ Score Calculation
+      // ✅ Score calculation
       let totalScore = 0;
       for (const selected of [mcq1, mcq2, mcq3]) {
         const optText = task[selected];
         const match = optText?.match(/\((\d+)\s*points\)/i);
         if (match) {
           totalScore += parseInt(match[1], 10);
-        } else {
-          console.warn("⚠️ Invalid or missing points in field:", selected);
         }
       }
 
-      // ✅ Handle files
+      // ✅ Optional file inputs
       const image_url = req.files?.image?.[0]?.path || null;
       const video_url = req.files?.video?.[0]?.path || null;
 
-      // ✅ Insert task score
+      // ✅ Save task score
       const taskScoreId = uuidv4();
       await TaskScore.createTaskScore(
         taskScoreId,
@@ -96,29 +95,28 @@ if (allowedMatches[inputOwner] !== dbTaskOwner) {
         video_url
       );
 
-      // ✅ Mark the task as completed in task_assignment
+      // ✅ Mark as completed in task_assignments
       const assignmentId = uuidv4();
-await db.execute(
-  `INSERT INTO task_assignments (id, taskId, userId, status, completed_at)
-   VALUES (?, ?, ?, 'completed', NOW())
-   ON DUPLICATE KEY UPDATE status = 'completed', completed_at = NOW()`,
-  [assignmentId, taskId, childId]
-);
-
-
+      await db.execute(
+        `INSERT INTO task_assignments (id, taskId, childId, status, completed_at)
+         VALUES (?, ?, ?, 'completed', NOW())
+         ON DUPLICATE KEY UPDATE status = 'completed', completed_at = NOW()`,
+        [assignmentId, taskId, childId]
+      );
 
       res.status(200).json({
         success: true,
         totalScore,
         comment,
         image_url,
-        video_url,
+        video_url
       });
+
     } catch (err) {
       console.error("❌ Error in submitTaskScore:", err);
       res.status(500).json({ error: "Failed to submit task score." });
     }
-  },
+  }
 ];
 
 

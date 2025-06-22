@@ -3,6 +3,11 @@ const db = require("../config/db");
 const TaskScore = require("../models/taskScoreModel");
 const upload = require("../middleware/upload");
 
+const { v4: uuidv4 } = require("uuid");
+const db = require("../config/db");
+const TaskScore = require("../models/taskScoreModel");
+const upload = require("../middleware/upload");
+
 exports.submitTaskScore = [
   upload.fields([
     { name: "image", maxCount: 1 },
@@ -22,27 +27,24 @@ exports.submitTaskScore = [
         return res.status(400).json({ error: "Missing required fields." });
       }
 
-      // ✅ Validate child
-      const [childRows] = await db.execute(
-        `SELECT * FROM children WHERE childId = ?`, [childId]
-      );
+      // Validate child
+      const [childRows] = await db.execute(`SELECT * FROM children WHERE childId = ?`, [childId]);
       if (childRows.length === 0) {
         return res.status(404).json({ error: "Child not found." });
       }
 
-      // ✅ Validate task
-      const [taskRows] = await db.execute(
-        `SELECT * FROM task WHERE taskId = ?`, [taskId]
-      );
+      // Validate task
+      const [taskRows] = await db.execute(`SELECT * FROM task WHERE taskId = ?`, [taskId]);
       if (taskRows.length === 0) {
         return res.status(404).json({ error: "Task not found." });
       }
 
       const task = taskRows[0];
+
+      // Validate task owner
       const normalizeOwner = (text) => text?.toLowerCase().replace(/[^a-z]/gi, "").trim();
       const dbTaskOwner = normalizeOwner(task.task_owner);
       const inputOwner = normalizeOwner(task_owner);
-
       const allowedMatches = {
         father: "fatherstask",
         mother: "motherstask",
@@ -53,7 +55,7 @@ exports.submitTaskScore = [
         return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
       }
 
-      // ✅ Check duplicate
+      // Prevent duplicate submission
       const [existing] = await db.execute(
         `SELECT 1 FROM task_scores WHERE childId = ? AND taskId = ? AND taskOwner = ?`,
         [childId, taskId, task_owner]
@@ -62,10 +64,9 @@ exports.submitTaskScore = [
         return res.status(409).json({ error: "Task already submitted for this child." });
       }
 
-      // ✅ Calculate score
-      let totalScore = 0;
+      // Map mcq selections to actual DB columns
       const getOptionText = (key) => {
-        const map = {
+        const fieldMap = {
           mcq1_opt1: task.mcq1Opt1,
           mcq1_opt2: task.mcq1Opt2,
           mcq1_opt3: task.mcq1Opt3,
@@ -77,26 +78,28 @@ exports.submitTaskScore = [
           mcq3_opt1: task.mcq3Opt1,
           mcq3_opt2: task.mcq3Opt2,
           mcq3_opt3: task.mcq3Opt3,
-          mcq3_opt4: task.mcq3Opt4,
+          mcq3_opt4: task.mcq3Opt4
         };
-        return map[key];
+        return fieldMap[key];
       };
 
+      // Calculate total score
+      let totalScore = 0;
       for (const selected of [mcq1, mcq2, mcq3]) {
         const optText = getOptionText(selected);
         const match = optText?.match(/\((\d+)\s*points\)/i);
-        if (match) totalScore += parseInt(match[1], 10);
+        if (match) {
+          totalScore += parseInt(match[1], 10);
+        }
       }
 
       const image_url = req.files?.image?.[0]?.path || null;
       const video_url = req.files?.video?.[0]?.path || null;
-
-      // ✅ Insert into task_scores
-      const taskScoreId = uuidv4();
       const userId = childRows[0].userId;
       const age_group = task.age_group;
       const week = task.week;
 
+      const taskScoreId = uuidv4();
       await TaskScore.createTaskScore(
         taskScoreId,
         taskId,
@@ -114,7 +117,6 @@ exports.submitTaskScore = [
         week
       );
 
-      // ✅ Update task_assignments
       const assignmentId = uuidv4();
       await db.execute(
         `INSERT INTO task_assignments (id, taskId, childId, status, completed_at)

@@ -33,33 +33,55 @@ exports.loginUser = async (req, res) => {
 };
 
 exports.createParent = async (req, res) => {
-  const { name, email, password, confirmPassword } = req.body;
+  const { name, email, password, confirmPassword, method, providerId } = req.body;
 
   try {
-    if (!name || !email || !password || !confirmPassword) {
-      return res.status(400).json({ error: "Name, email, and both password fields are required." });
+    if (!method || !["guest", "google", "ios"].includes(method)) {
+      return res.status(400).json({ error: "Invalid or missing signup method." });
     }
 
-    if (password !== confirmPassword) {
-      return res.status(400).json({ error: "Passwords do not match." });
+    // Common: name & email must exist
+    if (!name || !email) {
+      return res.status(400).json({ error: "Name and email are required." });
     }
 
+    // ✅ Check if user already exists
     const [exists] = await db.execute("SELECT * FROM users WHERE email = ?", [email]);
     if (exists.length) {
       return res.status(400).json({ error: "Email already exists." });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const userId = uuidv4();
+    let hashedPassword = null;
 
+    // ✅ For guest method, require password + confirmation
+    if (method === "guest") {
+      if (!password || !confirmPassword) {
+        return res.status(400).json({ error: "Password and confirmPassword are required for guest signup." });
+      }
+      if (password !== confirmPassword) {
+        return res.status(400).json({ error: "Passwords do not match." });
+      }
+      hashedPassword = await bcrypt.hash(password, 10);
+    }
+
+    // ✅ For Google/iOS, providerId is optional — no password stored
+    const userId = uuidv4();
     await db.execute(
-      `INSERT INTO users (userId, name, email, password, type) VALUES (?, ?, ?, ?, ?)`,
-      [userId, name, email, hashedPassword, "parent"]
+      `INSERT INTO users (userId, name, email, password, type, provider, providerId) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [
+        userId,
+        name,
+        email,
+        hashedPassword,              // null for Google/iOS
+        "parent",
+        method === "guest" ? null : method, // provider: google/ios/null
+        method === "guest" ? null : providerId || null
+      ]
     );
 
-    // 🔐 Generate token right after registration
+    // ✅ Generate token
     const token = jwt.sign({ id: userId, email, type: "parent" }, process.env.JWT_SECRET, {
-      expiresIn: "1h",
+      expiresIn: "731 days",
     });
 
     res.status(201).json({
@@ -69,14 +91,16 @@ exports.createParent = async (req, res) => {
         userId,
         name,
         email,
+        provider: method,
       },
-      token // Return token
+      token,
     });
   } catch (error) {
     console.error("❌ Create Parent Error:", error.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 // 👧 Create Child

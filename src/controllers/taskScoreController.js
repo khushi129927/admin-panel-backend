@@ -98,11 +98,12 @@ if (allowedMatches[inputOwner] !== dbTaskOwner) {
 
       // ✅ Mark the task as completed in task_assignment
       await db.execute(
-        `UPDATE task_assignments 
-         SET status = 'completed', completed_at = NOW() 
-         WHERE taskId = ? AND userId = ?`,
-        [taskId, childId]
-      );
+  `UPDATE task_assignments 
+   SET status = 'completed' 
+   WHERE taskId = ? AND userId = ?`,
+  [taskId, childId]
+);
+
 
       res.status(200).json({
         success: true,

@@ -22,24 +22,28 @@ exports.submitTaskScore = [
         return res.status(400).json({ error: "Missing required fields." });
       }
 
-      // Validate child
-      const [childRows] = await db.execute(`SELECT * FROM children WHERE childId = ?`, [childId]);
+      const [childRows] = await db.execute(
+        `SELECT * FROM children WHERE childId = ?`,
+        [childId]
+      );
       if (childRows.length === 0) {
         return res.status(404).json({ error: "Child not found." });
       }
 
-      // Validate task
-      const [taskRows] = await db.execute(`SELECT * FROM task WHERE taskId = ?`, [taskId]);
+      const [taskRows] = await db.execute(
+        `SELECT * FROM task WHERE taskId = ?`,
+        [taskId]
+      );
       if (taskRows.length === 0) {
         return res.status(404).json({ error: "Task not found." });
       }
 
       const task = taskRows[0];
-
-      // Validate task owner
-      const normalizeOwner = (text) => text?.toLowerCase().replace(/[^a-z]/gi, "").trim();
+      const normalizeOwner = (text) =>
+        text?.toLowerCase().replace(/[^a-z]/gi, "").trim();
       const dbTaskOwner = normalizeOwner(task.task_owner);
       const inputOwner = normalizeOwner(task_owner);
+
       const allowedMatches = {
         father: "fatherstask",
         mother: "motherstask",
@@ -47,42 +51,27 @@ exports.submitTaskScore = [
       };
 
       if (allowedMatches[inputOwner] !== dbTaskOwner) {
-        return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
+        return res
+          .status(403)
+          .json({ error: `This task does not belong to ${task_owner}.` });
       }
 
-      // Prevent duplicate submission
       const [existing] = await db.execute(
-        `SELECT 1 FROM task_scores WHERE childId = ? AND taskId = ? AND taskOwner = ?`,
-        [childId, taskId, task_owner]
+        `SELECT 1 FROM task_scores WHERE childId = ? AND taskId = ?`,
+        [childId, taskId]
       );
       if (existing.length > 0) {
-        return res.status(409).json({ error: "Task already submitted for this child." });
+        return res.status(409).json({
+          error: "Task already submitted for this child."
+        });
       }
 
-      // Map mcq selections to actual DB columns
-      const getOptionText = (key) => {
-        const fieldMap = {
-          mcq1_opt1: task.mcq1Opt1,
-          mcq1_opt2: task.mcq1Opt2,
-          mcq1_opt3: task.mcq1Opt3,
-          mcq1_opt4: task.mcq1Opt4,
-          mcq2_opt1: task.mcq2Opt1,
-          mcq2_opt2: task.mcq2Opt2,
-          mcq2_opt3: task.mcq2Opt3,
-          mcq2_opt4: task.mcq2Opt4,
-          mcq3_opt1: task.mcq3Opt1,
-          mcq3_opt2: task.mcq3Opt2,
-          mcq3_opt3: task.mcq3Opt3,
-          mcq3_opt4: task.mcq3Opt4
-        };
-        return fieldMap[key];
-      };
-
-      // Calculate total score
+      // ✅ Score calculation from options like (4/10)
       let totalScore = 0;
-      for (const selected of [mcq1, mcq2, mcq3]) {
-        const optText = getOptionText(selected);
-        const match = optText?.match(/\((\d+)\s*points\)/i);
+      const answers = [mcq1, mcq2, mcq3];
+      for (const selected of answers) {
+        const optText = task[selected];
+        const match = optText?.match(/\((\d+)\s*\/\s*\d+\)/); // Matches (4/10)
         if (match) {
           totalScore += parseInt(match[1], 10);
         }
@@ -90,11 +79,12 @@ exports.submitTaskScore = [
 
       const image_url = req.files?.image?.[0]?.path || null;
       const video_url = req.files?.video?.[0]?.path || null;
+
       const userId = childRows[0].userId;
       const age_group = task.age_group;
       const week = task.week;
-
       const taskScoreId = uuidv4();
+
       await TaskScore.createTaskScore(
         taskScoreId,
         taskId,
@@ -135,7 +125,6 @@ exports.submitTaskScore = [
     }
   }
 ];
-
 
 // 📤 Get Scores by Child
 exports.getChildTaskScores = async (req, res) => {

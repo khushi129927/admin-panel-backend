@@ -163,10 +163,22 @@ exports.getTasksByWeek = async (req, res) => {
 
 
 exports.getCompletedTasksByOwnerAndChild = async (req, res) => {
-  const { childId, taskOwner } = req.query;
+  const { childId, taskOwner } = req.params;
 
   if (!childId || !taskOwner) {
     return res.status(400).json({ error: "Both 'childId' and 'taskOwner' are required." });
+  }
+
+  // Normalize task owner
+  const normalizedOwnerMap = {
+    father: "Father’s Task",
+    mother: "Mother’s Task",
+    combined: "Combined Task"
+  };
+
+  const normalizedTaskOwner = normalizedOwnerMap[taskOwner.toLowerCase()];
+  if (!normalizedTaskOwner) {
+    return res.status(400).json({ error: "Invalid taskOwner value. Use 'father', 'mother', or 'combined'." });
   }
 
   try {
@@ -177,7 +189,7 @@ exports.getCompletedTasksByOwnerAndChild = async (req, res) => {
        JOIN task_assignment ta ON ts.taskId = ta.taskId AND ta.userId = ?
        WHERE ts.childId = ? AND t.task_owner = ? AND ta.status = 'completed'
        ORDER BY ts.submitted_at DESC`,
-      [childId, childId, taskOwner]
+      [childId, childId, normalizedTaskOwner]
     );
 
     res.status(200).json({ success: true, data: rows });
@@ -186,6 +198,7 @@ exports.getCompletedTasksByOwnerAndChild = async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve completed task scores." });
   }
 };
+
 
 
 

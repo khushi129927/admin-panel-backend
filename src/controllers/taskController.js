@@ -155,29 +155,27 @@ exports.getTasksByWeek = async (req, res) => {
       return res.status(404).json({ success: false, message: "No tasks found for this week." });
     }
 
-    // Remove point text from each task field
-    const sanitizedTasks = results.map(task => {
-      const cleanText = text => text?.replace(/\s*\(\s*\d+\s*points\s*\)/gi, "").trim();
+    // Remove all text inside parentheses (e.g., "(10/10)", "(6 points)")
+    const cleanText = text => text?.replace(/\s*\(.*?\)/g, "").trim();
 
-      return {
-        ...task,
-        mcq1: cleanText(task.mcq1),
-        mcq2: cleanText(task.mcq2),
-        mcq3: cleanText(task.mcq3),
-        mcq1_opt1: cleanText(task.mcq1_opt1),
-        mcq1_opt2: cleanText(task.mcq1_opt2),
-        mcq1_opt3: cleanText(task.mcq1_opt3),
-        mcq1_opt4: cleanText(task.mcq1_opt4),
-        mcq2_opt1: cleanText(task.mcq2_opt1),
-        mcq2_opt2: cleanText(task.mcq2_opt2),
-        mcq2_opt3: cleanText(task.mcq2_opt3),
-        mcq2_opt4: cleanText(task.mcq2_opt4),
-        mcq3_opt1: cleanText(task.mcq3_opt1),
-        mcq3_opt2: cleanText(task.mcq3_opt2),
-        mcq3_opt3: cleanText(task.mcq3_opt3),
-        mcq3_opt4: cleanText(task.mcq3_opt4),
-      };
-    });
+    const sanitizedTasks = results.map(task => ({
+      ...task,
+      mcq1: cleanText(task.mcq1),
+      mcq2: cleanText(task.mcq2),
+      mcq3: cleanText(task.mcq3),
+      mcq1_opt1: cleanText(task.mcq1_opt1),
+      mcq1_opt2: cleanText(task.mcq1_opt2),
+      mcq1_opt3: cleanText(task.mcq1_opt3),
+      mcq1_opt4: cleanText(task.mcq1_opt4),
+      mcq2_opt1: cleanText(task.mcq2_opt1),
+      mcq2_opt2: cleanText(task.mcq2_opt2),
+      mcq2_opt3: cleanText(task.mcq2_opt3),
+      mcq2_opt4: cleanText(task.mcq2_opt4),
+      mcq3_opt1: cleanText(task.mcq3_opt1),
+      mcq3_opt2: cleanText(task.mcq3_opt2),
+      mcq3_opt3: cleanText(task.mcq3_opt3),
+      mcq3_opt4: cleanText(task.mcq3_opt4),
+    }));
 
     res.status(200).json({ success: true, tasks: sanitizedTasks });
   } catch (err) {

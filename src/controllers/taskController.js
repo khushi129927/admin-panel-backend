@@ -174,10 +174,10 @@ exports.getCompletedTasksByChildId = async (req, res) => {
       `SELECT ts.*, t.task, t.age_group, ta.status
        FROM task_scores ts
        JOIN task t ON ts.taskId = t.taskId
-       JOIN task_assignments ta ON ts.taskId = ta.taskId AND ta.childId = ?
-       WHERE ta.status = 'completed'
+       JOIN task_assignments ta ON ts.taskId = ta.taskId
+       WHERE ta.childId = ? AND ts.childId = ? AND ta.status = 'completed'
        ORDER BY ts.submitted_at DESC`,
-      [childId]
+      [childId, childId]
     );
 
     res.status(200).json({ success: true, data: rows });
@@ -186,6 +186,7 @@ exports.getCompletedTasksByChildId = async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve completed tasks." });
   }
 };
+
 
 
 

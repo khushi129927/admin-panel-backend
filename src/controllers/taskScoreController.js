@@ -72,8 +72,8 @@ exports.submitTaskScore = [
       const [existing] = await db.execute(
         `SELECT * FROM task_scores 
          WHERE childId = ? AND taskId = ?  
-         AND taskOwner = ?,
-        [childId, taskId, userId, task_owner]
+         AND taskOwner = ?`,
+        [childId, taskId, userId, task_owner, age_group, week]
       );
 
       if (existing.length > 0) {

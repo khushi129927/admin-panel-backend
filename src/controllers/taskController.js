@@ -169,7 +169,7 @@ exports.getCompletedTasksByOwnerAndChild = async (req, res) => {
     return res.status(400).json({ error: "Both 'childId' and 'taskOwner' are required." });
   }
 
-  // Normalize task owner
+  // Normalize task owner input
   const normalizedOwnerMap = {
     father: "Father’s Task",
     mother: "Mother’s Task",
@@ -183,12 +183,12 @@ exports.getCompletedTasksByOwnerAndChild = async (req, res) => {
 
   try {
     const [rows] = await db.execute(
-      `SELECT ts.*, t.task, t.age_group, ta.status
+      `SELECT ts.*, t.task, t.age_group, ta.status, ta.completed_at
        FROM task_scores ts
        JOIN task t ON ts.taskId = t.taskId
-       JOIN task_assignments ta ON ts.taskId = ta.taskId AND ta.userId = ?
-       WHERE ts.childId = ? AND t.task_owner = ? AND ta.status = 'completed'
-       ORDER BY ts.submitted_at DESC`,
+       JOIN task_assignments ta ON ts.taskId = ta.taskId
+       WHERE ts.childId = ? AND ta.userId = ? AND t.task_owner = ? AND ta.status = 'completed'
+       ORDER BY ta.completed_at DESC`,
       [childId, childId, normalizedTaskOwner]
     );
 
@@ -198,6 +198,7 @@ exports.getCompletedTasksByOwnerAndChild = async (req, res) => {
     res.status(500).json({ error: "Failed to retrieve completed task scores." });
   }
 };
+
 
 
 

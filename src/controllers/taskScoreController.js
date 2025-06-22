@@ -3,7 +3,6 @@ const db = require("../config/db");
 const TaskScore = require("../models/taskScoreModel");
 const upload = require("../middleware/upload");
 
-
 exports.submitTaskScore = [
   upload.fields([
     { name: "image", maxCount: 1 },
@@ -14,7 +13,8 @@ exports.submitTaskScore = [
       const childId = req.body.childId?.trim();
       const taskId = req.body.taskId?.trim();
       const task_owner = req.body.task_owner?.trim();
-      const mode = req.body.mode?.trim(); // "markOnly" or undefined
+      const mode = req.body.mode?.trim();
+      const comment = req.body.comment?.trim() || null;
 
       if (!childId || !taskId || !task_owner) {
         return res.status(400).json({ error: "Missing required fields." });
@@ -39,64 +39,84 @@ exports.submitTaskScore = [
         mother: "motherstask",
         combined: "combinedtask"
       };
-
       if (allowedMatches[inputOwner] !== dbTaskOwner) {
         return res.status(403).json({ error: `This task does not belong to ${task_owner}.` });
       }
 
-      // ✅ Check existing task_score
-      const [existing] = await db.execute(
-        `SELECT totalScore FROM task_scores WHERE childId = ? AND taskId = ?`,
-        [childId, taskId]
-      );
-      if (existing.length > 0 && existing[0].totalScore > 0) {
-        return res.status(409).json({ error: "Task already submitted with a score greater than 0." });
-      }
+      const userId = childRows[0].userId;
+      const age_group = task.age_group;
+      const week = task.week;
 
       let totalScore = 0;
       let mcq1 = null, mcq2 = null, mcq3 = null;
-      const comment = req.body.comment?.trim() || null;
 
-      // ✅ If full submission
       if (mode !== "markOnly") {
         mcq1 = req.body.mcq1;
         mcq2 = req.body.mcq2;
         mcq3 = req.body.mcq3;
-
         if (!mcq1 || !mcq2 || !mcq3) {
-          return res.status(400).json({ error: "MCQ answers are required in full submission." });
+          return res.status(400).json({ error: "MCQ answers are required for full submission." });
         }
 
         for (const selected of [mcq1, mcq2, mcq3]) {
           const optText = task[selected];
           const match = optText?.match(/\((\d+)\s*points\)/i);
-          if (match) {
-            totalScore += parseInt(match[1], 10);
-          }
+          if (match) totalScore += parseInt(match[1], 10);
         }
       }
 
-      // ✅ Optional file inputs
       const image_url = req.files?.image?.[0]?.path || null;
       const video_url = req.files?.video?.[0]?.path || null;
 
-      // ✅ Insert task score
-      const taskScoreId = uuidv4();
-      await TaskScore.createTaskScore(
-        taskScoreId,
-        taskId,
-        childId,
-        task_owner,
-        mcq1,
-        mcq2,
-        mcq3,
-        totalScore,
-        comment,
-        image_url,
-        video_url
+      // 🔍 Check for any previous task_score
+      const [existing] = await db.execute(
+        `SELECT * FROM task_scores 
+         WHERE childId = ? AND taskId = ? AND userId = ? 
+         AND task_owner = ? AND age_group = ? AND week = ?`,
+        [childId, taskId, userId, task_owner, age_group, week]
       );
 
-      // ✅ Mark task as completed
+      if (existing.length > 0) {
+        const prev = existing[0];
+        if (prev.totalScore > 0) {
+          return res.status(409).json({ error: "Task already fully submitted. No further submissions allowed." });
+        }
+
+        if (mode !== "markOnly") {
+          // 🟡 Full submission allowed after markOnly
+          await db.execute(
+            `UPDATE task_scores 
+             SET mcq1 = ?, mcq2 = ?, mcq3 = ?, totalScore = ?, comment = ?, image_url = ?, video_url = ?, submitted_at = NOW()
+             WHERE taskScoreId = ?`,
+            [mcq1, mcq2, mcq3, totalScore, comment, image_url, video_url, prev.taskScoreId]
+          );
+        } else {
+          // 🔒 MarkOnly again not allowed if already exists
+          return res.status(409).json({ error: "Task already marked. Submit full version to update." });
+        }
+
+      } else {
+        // 🆕 First-time submission
+        const taskScoreId = uuidv4();
+        await TaskScore.createTaskScore(
+          taskScoreId,
+          taskId,
+          childId,
+          task_owner,
+          mcq1,
+          mcq2,
+          mcq3,
+          totalScore,
+          comment,
+          image_url,
+          video_url,
+          userId,
+          age_group,
+          week
+        );
+      }
+
+      // 🟢 Mark in task_assignments
       const assignmentId = uuidv4();
       await db.execute(
         `INSERT INTO task_assignments (id, taskId, childId, status, completed_at)
@@ -108,10 +128,8 @@ exports.submitTaskScore = [
       res.status(200).json({
         success: true,
         mode: mode || "full",
-        message: mode === "markOnly" ? "Task marked as completed." : "Task submitted with score.",
         totalScore,
-        image_url,
-        video_url
+        message: mode === "markOnly" ? "Task marked as completed." : "Task fully submitted."
       });
 
     } catch (err) {
@@ -120,7 +138,6 @@ exports.submitTaskScore = [
     }
   }
 ];
-
 
 
 // 📤 Get Scores by Child

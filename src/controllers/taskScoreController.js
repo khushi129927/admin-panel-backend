@@ -3,11 +3,6 @@ const db = require("../config/db");
 const TaskScore = require("../models/taskScoreModel");
 const upload = require("../middleware/upload");
 
-const { v4: uuidv4 } = require("uuid");
-const db = require("../config/db");
-const TaskScore = require("../models/taskScoreModel");
-const upload = require("../middleware/upload");
-
 exports.submitTaskScore = [
   upload.fields([
     { name: "image", maxCount: 1 },

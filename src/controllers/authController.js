@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { v4: uuidv4 } = require("uuid");
 const { sendOTP } = require("../utils/mailer");
+const { addToBlacklist } = require("../utils/tokenBlacklist");
 
 // ✅ Verify Token Middleware
 exports.verifyToken = (req, res) => {
@@ -63,3 +64,13 @@ exports.verifyOtp = async (req, res) => {
   }
 };
 
+exports.logoutUser = (req, res) => {
+  const token = req.headers.authorization?.split(" ")[1];
+
+  if (!token) {
+    return res.status(400).json({ error: "Token required for logout." });
+  }
+
+  addToBlacklist(token);
+  res.json({ success: true, message: "User logged out successfully. Token invalidated." });
+};

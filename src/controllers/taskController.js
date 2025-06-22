@@ -162,6 +162,31 @@ exports.getTasksByWeek = async (req, res) => {
 };
 
 
+exports.getCompletedTasksByOwnerAndChild = async (req, res) => {
+  const { childId, taskOwner } = req.query;
+
+  if (!childId || !taskOwner) {
+    return res.status(400).json({ error: "Both 'childId' and 'taskOwner' are required." });
+  }
+
+  try {
+    const [rows] = await db.execute(
+      `SELECT ts.*, t.task, t.age_group, ta.status
+       FROM task_scores ts
+       JOIN task t ON ts.taskId = t.taskId
+       JOIN task_assignment ta ON ts.taskId = ta.taskId AND ta.userId = ?
+       WHERE ts.childId = ? AND t.task_owner = ? AND ta.status = 'completed'
+       ORDER BY ts.submitted_at DESC`,
+      [childId, childId, taskOwner]
+    );
+
+    res.status(200).json({ success: true, data: rows });
+  } catch (error) {
+    console.error("❌ Error fetching completed tasks:", error.message);
+    res.status(500).json({ error: "Failed to retrieve completed task scores." });
+  }
+};
+
 
 
 // 🎯 Assign Task to User

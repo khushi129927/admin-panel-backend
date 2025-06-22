@@ -96,6 +96,14 @@ if (allowedMatches[inputOwner] !== dbTaskOwner) {
         video_url
       );
 
+      // ✅ Mark the task as completed in task_assignment
+      await db.execute(
+        `UPDATE task_assignment 
+         SET status = 'completed', completed_at = NOW() 
+         WHERE taskId = ? AND userId = ?`,
+        [taskId, childId]
+      );
+
       res.status(200).json({
         success: true,
         totalScore,

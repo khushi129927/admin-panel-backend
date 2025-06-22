@@ -186,7 +186,7 @@ exports.getCompletedTasksByOwnerAndChild = async (req, res) => {
       `SELECT ts.*, t.task, t.age_group, ta.status
        FROM task_scores ts
        JOIN task t ON ts.taskId = t.taskId
-       JOIN task_assignment ta ON ts.taskId = ta.taskId AND ta.userId = ?
+       JOIN task_assignments ta ON ts.taskId = ta.taskId AND ta.userId = ?
        WHERE ts.childId = ? AND t.task_owner = ? AND ta.status = 'completed'
        ORDER BY ts.submitted_at DESC`,
       [childId, childId, normalizedTaskOwner]

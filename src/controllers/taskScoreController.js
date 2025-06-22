@@ -98,7 +98,7 @@ if (allowedMatches[inputOwner] !== dbTaskOwner) {
 
       // ✅ Mark the task as completed in task_assignment
       await db.execute(
-        `UPDATE task_assignment 
+        `UPDATE task_assignments 
          SET status = 'completed', completed_at = NOW() 
          WHERE taskId = ? AND userId = ?`,
         [taskId, childId]

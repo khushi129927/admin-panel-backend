@@ -69,10 +69,10 @@ app.use("/api/otp", require("./src/routes/otpRoute"));
 app.use("/api/testScore", require("./src/routes/testScoreRoute"));
 app.use("/api/taskScore", require("./src/routes/taskScoreRoute"));
 
-// ✅ Catch-All Route for React SPA
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "admin-panel-frontend", "build", "index.html"));
+  res.status(404).json({ error: "Not Found" });
 });
+
 
 app.get("/api/ping", (req, res) => {
   res.send("✅ Server is up!");

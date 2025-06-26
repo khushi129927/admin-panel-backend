@@ -28,12 +28,19 @@ require("./src/models/taskFeedbackModel");
 require("./src/models/leaderboardModel");
 
 // ✅ CORS: Allow local & tools like Postman
-const allowedOrigins = ["http://localhost:3000", undefined];
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://127.0.0.1:3000",
+  "capacitor://localhost",
+  "http://localhost",
+  "https://admin-panel-backend-production-dd28.up.railway.app",
+];
+
 app.use(cors({
   origin: (origin, cb) => {
     if (!origin || allowedOrigins.includes(origin)) cb(null, true);
     else {
-      console.error("🚫 CORS Error: Blocked origin =>", origin);
+      console.error("🚫 CORS BLOCKED:", origin);
       cb(new Error("CORS Not Allowed"));
     }
   },
@@ -67,11 +74,24 @@ app.get("*", (req, res) => {
   res.sendFile(path.join(__dirname, "admin-panel-frontend", "build", "index.html"));
 });
 
+app.get("/api/ping", (req, res) => {
+  res.send("✅ Server is up!");
+});
+
 // ✅ Global Error Handler
 app.use((err, req, res, next) => {
   console.error("❌ Unhandled Error:", err.stack);
   res.status(500).json({ error: "Internal Server Error", details: err.message });
 });
+
+app.use((err, req, res, next) => {
+  console.error("❌ Error URL:", req.originalUrl);
+  console.error("❌ Method:", req.method);
+  console.error("❌ Headers:", req.headers);
+  console.error("❌ Stack:", err.stack);
+  res.status(500).json({ error: "Internal Server Error", details: err.message });
+});
+
 
 // ✅ Database Test Endpoint
 app.get("/api/test-db", async (req, res) => {

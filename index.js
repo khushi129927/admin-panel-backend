@@ -69,13 +69,12 @@ app.use("/api/otp", require("./src/routes/otpRoute"));
 app.use("/api/testScore", require("./src/routes/testScoreRoute"));
 app.use("/api/taskScore", require("./src/routes/taskScoreRoute"));
 
-app.get("*", (req, res) => {
-  res.status(404).json({ error: "Not Found" });
-});
-
-
 app.get("/api/ping", (req, res) => {
   res.send("✅ Server is up!");
+});
+
+app.get("*", (req, res) => {
+  res.status(404).json({ error: "Not Found" });
 });
 
 // ✅ Global Error Handler

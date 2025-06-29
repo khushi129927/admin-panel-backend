@@ -363,13 +363,57 @@ exports.getChildren = async (req, res) => {
 
 exports.getChildrenById = async (req, res) => {
   try {
-    const [children] = await db.execute("SELECT * FROM children WHERE childId = ?", [req.params.childId]);
-    res.json({ success: true, children });
+    const childId = req.params.childId;
+
+    // Fetch child details
+    const [children] = await db.execute(
+      "SELECT * FROM children WHERE childId = ?",
+      [childId]
+    );
+
+    if (!children.length) {
+      return res.status(404).json({ success: false, message: "Child not found" });
+    }
+
+    // Fetch task progress
+    const [[taskStats]] = await db.execute(
+      `SELECT COUNT(*) AS tasksCompleted, 
+              AVG(score) AS avgTaskScore 
+       FROM task_scores 
+       WHERE childId = ?`,
+      [childId]
+    );
+
+    // Fetch test progress
+    const [[testStats]] = await db.execute(
+      `SELECT COUNT(*) AS testsCompleted, 
+              AVG(score) AS avgTestScore 
+       FROM test_scores 
+       WHERE childId = ?`,
+      [childId]
+    );
+
+    const progressOverview = {
+      tasksCompleted: taskStats.tasksCompleted || 0,
+      testsCompleted: testStats.testsCompleted || 0,
+      averageScore: (
+        ((taskStats.avgTaskScore || 0) + (testStats.avgTestScore || 0)) / 
+        (taskStats.avgTaskScore && testStats.avgTestScore ? 2 : 1)
+      ).toFixed(2)
+    };
+
+    res.json({
+      success: true,
+      children: children[0],
+      progressOverview
+    });
+
   } catch (error) {
     console.error("❌ Get Children Error:", error.message);
     res.status(500).json({ error: error.message });
   }
 };
+
 
 // 📍 Get Location
 exports.getLocation = async (req, res) => {

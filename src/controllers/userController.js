@@ -453,7 +453,7 @@ const geocodeCity = async (city, state, country) => {
 
 exports.updateLocation = async (req, res) => {
   const { city, state, country, latitude, longitude } = req.body;
-  const userId = req.params.userId;
+  const userId = req.params.id;
   const safe = (v) => (typeof v === "undefined" ? null : v);
 
   if (!userId) return res.status(400).json({ error: "Missing userId" });

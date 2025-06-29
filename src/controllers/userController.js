@@ -393,11 +393,11 @@ exports.getChildrenById = async (req, res) => {
       [childId]
     );
 
-    // Safely handle null values by treating them as 0
-    const avgTask = taskStats.avgTaskScore ?? 0;
-    const avgTest = testStats.avgTestScore ?? 0;
+    // Safely convert to numbers and treat invalids as 0
+    const avgTask = isNaN(Number(taskStats.avgTaskScore)) ? 0 : Number(taskStats.avgTaskScore);
+    const avgTest = isNaN(Number(testStats.avgTestScore)) ? 0 : Number(testStats.avgTestScore);
 
-    // Average of both, even if one is 0
+    // Final average
     const averageScore = ((avgTask + avgTest) / 2).toFixed(2);
 
     const progressOverview = {

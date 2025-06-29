@@ -15,7 +15,7 @@ router.put("/update-parent/:id", auth, updateParent);
 router.put("/update-child/:childId", auth, updateChild);
 router.get("/parent/:id/get-children", auth, getChildren);
 router.get("/:childId/get-children", auth, getChildrenById);
-router.get("/:userId/get-parent", auth, getParentById);
+router.get("/:id/get-parent", auth, getParentById);
 
 // 📍 Location
 router.get("/:id/get-location", auth, getLocation);
@@ -25,6 +25,8 @@ router.post("/:id/update-location", auth, updateLocation);
 router.get("/get-all-users", getUsers);
 
 // 🏆Ranking
-router.get("/child-rankings/:userId", auth, getCombinedChildRanksByUserId);
+router.get("/child-rankings/:id", auth, getCombinedChildRanksByUserId);
+app.get("/rankings/:id", auth, getUserRankings);
+
 
 module.exports = router;

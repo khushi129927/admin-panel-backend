@@ -515,7 +515,7 @@ exports.getUsers = async (req, res) => {
 
 exports.getParentById = async (req, res) => {
   try {
-    const [parent] = await db.execute("SELECT * FROM users WHERE userId = ?", [req.params.userId]);
+    const [parent] = await db.execute("SELECT * FROM users WHERE userId = ?", [req.params.id]);
     res.json({ success: true, parent });
   } catch (error) {
     console.error("❌ Get Parent Error:", error.message);

@@ -26,7 +26,7 @@ router.get("/get-all-users", getUsers);
 
 // 🏆Ranking
 router.get("/child-rankings/:id", auth, getCombinedChildRanksByUserId);
-app.get("/rankings/:id", auth, getUserRankings);
+router.get("/rankings/:id", auth, getUserRankings);
 
 
 module.exports = router;

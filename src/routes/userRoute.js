@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const {loginUser, createParent, createChild, updateParent, updateChild, getChildren, getChildrenById, getLocation, updateLocation, getUsers, getParentById} = require("../controllers/userController");
-const {getCombinedChildRanksByUserId} = require("../controllers/rankingConroller")
+const {getCombinedChildRanksByUserId, getUserRankings} = require("../controllers/rankingConroller")
 const auth = require("../middleware/authMiddleware");
 
 // 🔐 Auth

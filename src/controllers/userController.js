@@ -378,7 +378,7 @@ exports.getChildrenById = async (req, res) => {
     // Fetch task progress
     const [[taskStats]] = await db.execute(
       `SELECT COUNT(*) AS tasksCompleted, 
-              AVG(score) AS avgTaskScore 
+              AVG(totalScore) AS avgTaskScore 
        FROM task_scores 
        WHERE childId = ?`,
       [childId]
@@ -387,19 +387,24 @@ exports.getChildrenById = async (req, res) => {
     // Fetch test progress
     const [[testStats]] = await db.execute(
       `SELECT COUNT(*) AS testsCompleted, 
-              AVG(score) AS avgTestScore 
+              AVG(totalScore) AS avgTestScore 
        FROM test_scores 
        WHERE childId = ?`,
       [childId]
     );
 
+    // Calculate combined average score
+    let averageScore;
+    if (taskStats.avgTaskScore && testStats.avgTestScore) {
+      averageScore = ((taskStats.avgTaskScore + testStats.avgTestScore) / 2).toFixed(2);
+    } else {
+      averageScore = (taskStats.avgTaskScore || testStats.avgTestScore || 0).toFixed(2);
+    }
+
     const progressOverview = {
       tasksCompleted: taskStats.tasksCompleted || 0,
       testsCompleted: testStats.testsCompleted || 0,
-      averageScore: (
-        ((taskStats.avgTaskScore || 0) + (testStats.avgTestScore || 0)) / 
-        (taskStats.avgTaskScore && testStats.avgTestScore ? 2 : 1)
-      ).toFixed(2)
+      averageScore
     };
 
     res.json({

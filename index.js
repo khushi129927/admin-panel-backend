@@ -25,6 +25,9 @@ require("./src/models/taskScoreModel");
 require("./src/models/taskAssignmentsModel");
 require("./src/models/taskFeedbackModel");
 require("./src/models/leaderboardModel");
+require("./src/models/eqScoresModel");
+require("./src/models/schoolMarksModel");
+require("./src/models/achievementsModel");
 
 // ✅ CORS: Allow local & tools like Postman
 const allowedOrigins = [

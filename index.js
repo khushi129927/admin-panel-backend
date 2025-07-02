@@ -28,6 +28,7 @@ require("./src/models/eqScoresModel");
 require("./src/models/schoolMarksModel");
 require("./src/models/achievementsModel");
 
+
 // ✅ CORS: Allow local & tools like Postman
 const allowedOrigins = [
   "http://localhost:3000",

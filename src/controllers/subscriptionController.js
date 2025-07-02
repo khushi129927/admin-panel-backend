@@ -14,6 +14,24 @@ exports.createSubscription = async (req, res) => {
   try {
     const { childId, planType, parentEmail } = req.body;
 
+    // 🔁 Step 1: Validate input
+    if (!childId || !planType || !parentEmail) {
+      return res.status(400).json({ error: "Missing required fields" });
+    }
+
+    // 🔍 Step 2: Validate child-parent relationship
+    const [childResult] = await db.execute(`
+      SELECT c.childId, u.razorpay_customer_id
+      FROM children c
+      JOIN users u ON c.userId = u.userId
+      WHERE c.childId = ? AND u.email = ?
+    `, [childId, parentEmail]);
+
+    if (!childResult.length) {
+      return res.status(403).json({ error: "Child does not belong to the given parent email." });
+    }
+
+    // 🔁 Step 3: Map plan types to Razorpay plan IDs
     const planMap = {
       monthly: "plan_QnTkv9jZTe1SaF",
       six_months: "plan_QnTpLcL3acuGsQ",
@@ -21,37 +39,25 @@ exports.createSubscription = async (req, res) => {
     };
 
     const plan_id = planMap[planType];
-    if (!plan_id) return res.status(400).json({ error: "Invalid planType provided" });
-
-    // 🔍 Step 1: Check if customer already exists in users table
-    const [userResult] = await db.execute(
-      "SELECT razorpay_customer_id FROM users WHERE email = ?",
-      [parentEmail]
-    );
-
-    if (!userResult.length) {
-      return res.status(404).json({ error: "User not found with this email." });
+    if (!plan_id) {
+      return res.status(400).json({ error: "Invalid planType provided" });
     }
 
-    let customerId = userResult[0].razorpay_customer_id;
+    // ✅ Step 4: Use existing Razorpay customer ID or create a new one
+    let customerId = childResult[0].razorpay_customer_id;
 
-    // 🆕 Create customer only if not already created
     if (!customerId) {
-    const customer = await razorpay.customers.create({ email: parentEmail });
-    customerId = customer.id;
+      const customer = await razorpay.customers.create({ email: parentEmail });
+      customerId = customer.id;
 
-    if (!parentEmail || !customerId) {
-      return res.status(400).json({ error: "Invalid parentEmail or customerId." });
-    }
-
-    // Save Razorpay customer ID in users table
-    await db.execute(
-      "UPDATE users SET razorpay_customer_id = ? WHERE email = ?",
-      [customerId, parentEmail]
+      // 🔄 Update users table with Razorpay customer ID
+      await db.execute(
+        "UPDATE users SET razorpay_customer_id = ? WHERE email = ?",
+        [customerId, parentEmail]
       );
     }
 
-    // 📦 Step 2: Create subscription
+    // 🛒 Step 5: Create Razorpay Subscription (don’t save in DB yet)
     const subscription = await razorpay.subscriptions.create({
       plan_id,
       customer_notify: 1,
@@ -59,18 +65,18 @@ exports.createSubscription = async (req, res) => {
       customer_id: customerId
     });
 
+    // ✅ Done — subscription created at Razorpay
     res.status(200).json({
       success: true,
-      message: "Subscription created successfully.",
-      subscription,
-      customerId
+      message: "Razorpay subscription created. Awaiting payment confirmation.",
+      subscription
     });
+
   } catch (error) {
-    console.error("Create Subscription Error:", error);
+    console.error("Create Subscription Error:", error.message);
     res.status(500).json({ error: "Failed to create subscription", details: error.message });
   }
 };
-
 
 // 2. Get All Subscriptions
 exports.getSubscriptions = async (req, res) => {

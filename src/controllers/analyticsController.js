@@ -92,7 +92,7 @@ exports.submitAchievement = async (req, res) => {
     );
     res.status(200).json({ message: "Achievement submitted." });
   } catch (err) {
-    res.status(500).json({ error: "Failed to insert achievement." });
+    res.status(500).json({ error: "Failed to insert achievement.", details:err.message });
   }
 };
 

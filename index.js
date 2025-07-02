@@ -13,7 +13,6 @@ require("./src/models/userModel");
 require("./src/models/taskModel");
 require("./src/models/subscriptionModel");
 require("./src/models/testModel");
-require(".//src/models/eqTestModel");
 require("./src/models/analyticsModel");
 require("./src/models/locationModel");
 require('./src/models/couponModel');

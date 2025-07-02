@@ -86,8 +86,8 @@ exports.submitAchievement = async (req, res) => {
 
   try {
     await db.query(
-      `INSERT INTO achievements (achievementId, childId, category, description, rank, dateAchieved)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO achievements (achievementId, childId, category, description, \`rank\`, dateAchieved)
+      VALUES (?, ?, ?, ?, ?, ?)`,
       [achievementId, childId, category, description, rank, dateAchieved]
     );
     res.status(200).json({ message: "Achievement submitted." });

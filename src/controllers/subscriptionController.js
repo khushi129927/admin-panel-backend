@@ -38,7 +38,7 @@ exports.createSubscription = async (req, res) => {
       subscription
     });
   } catch (error) {
-    console.error("Create Subscription Error:", error.message);
+    console.error("Create Subscription Error:", error);
     res.status(500).json({ error: "Failed to create subscription", details: error.message });
   }
 };

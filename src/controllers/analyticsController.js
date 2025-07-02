@@ -5,13 +5,13 @@ const db = require('../config/db');
 exports.submitEqScore = async (req, res) => {
   const { childId, percentile } = req.body;
   const eqScoreId = uuidv4();
-  const recorded_at = new Date();
+  const createdAt = new Date();
 
   try {
     await db.query(
-      `INSERT INTO eq_scores (eqScoreId, childId, percentile, recorded_at)
+      `INSERT INTO eq_scores (eqScoreId, childId, percentile, createdAt)
        VALUES (?, ?, ?, ?)`,
-      [eqScoreId, childId, percentile, recorded_at]
+      [eqScoreId, childId, percentile, createdAt]
     );
     res.status(200).json({ message: "EQ score submitted." });
   } catch (err) {

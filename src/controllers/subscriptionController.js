@@ -9,29 +9,19 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-// 1. Create Subscription Per Child
+// 1. Create Razorpay Subscription Only (don't save in DB yet)
 exports.createSubscription = async (req, res) => {
   try {
     const { childId, planType, customer_email } = req.body;
 
-    // 🔁 Map plan types to actual Razorpay plan IDs
     const planMap = {
-      monthly: "plan_QnTkv9jZTe1SaF",       // Replace with your real Razorpay plan IDs
+      monthly: "plan_QnTkv9jZTe1SaF",
       six_months: "plan_QnTpLcL3acuGsQ",
       yearly: "plan_QnTpjaSYfnBI2z"
     };
 
     const plan_id = planMap[planType];
-
-    if (!plan_id) {
-      return res.status(400).json({ error: "Invalid planType provided" });
-    }
-
-    // 🔍 Check if subscription already exists for this child
-    const [existing] = await db.execute(
-      "SELECT * FROM subscriptions WHERE childId = ?",
-      [childId]
-    );
+    if (!plan_id) return res.status(400).json({ error: "Invalid planType provided" });
 
     const customer = await razorpay.customers.create({ email: customer_email });
 
@@ -42,36 +32,16 @@ exports.createSubscription = async (req, res) => {
       customer_id: customer.id
     });
 
-    if (existing.length > 0) {
-      // 🔁 Update existing subscription
-      await db.execute(
-        `UPDATE subscriptions SET plan = ?, status = ?, razorpay_subscription_id = ?, updated_at = CURRENT_TIMESTAMP
-         WHERE childId = ?`,
-        [planType, "updated", subscription.id, childId]
-      );
-
-      return res.status(200).json({
-        success: true,
-        message: "Subscription updated for existing child.",
-        subscription
-      });
-    } else {
-      // 🆕 Create new subscription
-      const subscriptionId = uuidv4();
-      await db.execute(
-        `INSERT INTO subscriptions (subscriptionId, childId, plan, status, razorpay_subscription_id)
-         VALUES (?, ?, ?, ?, ?)`,
-        [subscriptionId, childId, planType, "created", subscription.id]
-      );
-
-      return res.status(201).json({ success: true, subscription });
-    }
+    res.status(200).json({
+      success: true,
+      message: "Razorpay subscription created. Awaiting payment confirmation.",
+      subscription
+    });
   } catch (error) {
     console.error("Create Subscription Error:", error.message);
-    res.status(500).json({ error: "Failed to create or update subscription", details: error.message });
+    res.status(500).json({ error: "Failed to create subscription", details: error.message });
   }
 };
-
 
 // 2. Get All Subscriptions
 exports.getSubscriptions = async (req, res) => {
@@ -123,7 +93,7 @@ exports.getPaymentHistory = async (req, res) => {
   }
 };
 
-// 6. Verify Subscription Payment
+// 6. Verify Payment
 exports.verifySubscriptionPayment = async (req, res) => {
   const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, childId, amount } = req.body;
   try {
@@ -132,40 +102,40 @@ exports.verifySubscriptionPayment = async (req, res) => {
       .update(razorpay_payment_id + "|" + razorpay_subscription_id)
       .digest("hex");
 
-    const verified = generated_signature === razorpay_signature;
-
-    if (!verified) {
+    if (generated_signature !== razorpay_signature) {
       return res.status(400).json({ success: false, message: "Invalid signature" });
     }
 
-    const sql = `INSERT INTO payments (paymentId, childId, amount, razorpay_payment_id, razorpay_subscription_id, razorpay_signature, status)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`;
-    await db.execute(sql, [
-      razorpay_payment_id,
-      childId,
-      amount,
-      razorpay_payment_id,
-      razorpay_subscription_id,
-      razorpay_signature,
-      "paid",
-    ]);
+    // Save payment record
+    await db.execute(
+      `INSERT INTO payments (paymentId, childId, amount, razorpay_payment_id, razorpay_subscription_id, razorpay_signature, status)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [razorpay_payment_id, childId, amount, razorpay_payment_id, razorpay_subscription_id, razorpay_signature, "paid"]
+    );
 
-    return res.status(200).json({ success: true, message: "Payment verified and stored" });
+    // Insert subscription only if not already there
+    const [existing] = await db.execute("SELECT * FROM subscriptions WHERE childId = ?", [childId]);
+    if (existing.length === 0) {
+      await db.execute(
+        `INSERT INTO subscriptions (subscriptionId, childId, plan, status, razorpay_subscription_id)
+         VALUES (?, ?, ?, ?, ?)`,
+        [uuidv4(), childId, "auto", "active", razorpay_subscription_id]
+      );
+    }
+
+    res.status(200).json({ success: true, message: "Payment verified and subscription saved." });
   } catch (err) {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
 
+// 7. Webhook Handler
 exports.handleWebhook = async (req, res) => {
   const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
   const signature = req.headers["x-razorpay-signature"];
   const body = JSON.stringify(req.body);
 
-  const expectedSignature = crypto
-    .createHmac("sha256", secret)
-    .update(body)
-    .digest("hex");
-
+  const expectedSignature = crypto.createHmac("sha256", secret).update(body).digest("hex");
   if (expectedSignature !== signature) {
     return res.status(400).json({ error: "Invalid webhook signature" });
   }
@@ -178,7 +148,6 @@ exports.handleWebhook = async (req, res) => {
       case "subscription.charged": {
         const payment = payload.payment.entity;
         const subscription_id = payment.subscription_id;
-
         const [sub] = await db.execute(
           "SELECT childId FROM subscriptions WHERE razorpay_subscription_id = ?",
           [subscription_id]
@@ -201,7 +170,6 @@ exports.handleWebhook = async (req, res) => {
       case "payment.failed": {
         const payment = payload.payment.entity;
         const subscription_id = payment.subscription_id;
-
         const [sub] = await db.execute(
           "SELECT childId FROM subscriptions WHERE razorpay_subscription_id = ?",
           [subscription_id]
@@ -225,7 +193,6 @@ exports.handleWebhook = async (req, res) => {
       case "subscription.halted": {
         const subscription_id = payload.subscription.entity.id;
         const status = event === "subscription.completed" ? "completed" : "halted";
-
         await db.execute(
           "UPDATE subscriptions SET status = ? WHERE razorpay_subscription_id = ?",
           [status, subscription_id]
@@ -243,4 +210,3 @@ exports.handleWebhook = async (req, res) => {
     res.status(500).json({ error: "Webhook handling failed" });
   }
 };
-

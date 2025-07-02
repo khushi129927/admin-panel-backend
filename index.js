@@ -17,7 +17,6 @@ require("./src/models/analyticsModel");
 require("./src/models/locationModel");
 require('./src/models/couponModel');
 require("./src/models/termsModel");
-require("./src/models/reviewsModel");
 require("./src/models/otpModel");
 require("./src/models/paymentsModel");
 require("./src/models/testScoreModel");

@@ -27,31 +27,48 @@ exports.createSubscription = async (req, res) => {
       return res.status(400).json({ error: "Invalid planType provided" });
     }
 
+    // 🔍 Check if subscription already exists for this child
+    const [existing] = await db.execute(
+      "SELECT * FROM subscriptions WHERE childId = ?",
+      [childId]
+    );
+
     const customer = await razorpay.customers.create({ email: customer_email });
 
     const subscription = await razorpay.subscriptions.create({
       plan_id,
       customer_notify: 1,
       total_count: 12,
-      customer_id: customer.id,
+      customer_id: customer.id
     });
 
-    const subscriptionId = uuidv4();
-    const sql = `INSERT INTO subscriptions (subscriptionId, childId, plan, status, razorpay_subscription_id)
-                 VALUES (?, ?, ?, ?, ?)`;
+    if (existing.length > 0) {
+      // 🔁 Update existing subscription
+      await db.execute(
+        `UPDATE subscriptions SET plan = ?, status = ?, razorpay_subscription_id = ?, updated_at = CURRENT_TIMESTAMP
+         WHERE childId = ?`,
+        [planType, "updated", subscription.id, childId]
+      );
 
-    await db.execute(sql, [
-      subscriptionId,
-      childId,
-      planType, // Store readable type like "monthly"
-      "created",
-      subscription.id,
-    ]);
+      return res.status(200).json({
+        success: true,
+        message: "Subscription updated for existing child.",
+        subscription
+      });
+    } else {
+      // 🆕 Create new subscription
+      const subscriptionId = uuidv4();
+      await db.execute(
+        `INSERT INTO subscriptions (subscriptionId, childId, plan, status, razorpay_subscription_id)
+         VALUES (?, ?, ?, ?, ?)`,
+        [subscriptionId, childId, planType, "created", subscription.id]
+      );
 
-    res.status(201).json({ success: true, subscription });
+      return res.status(201).json({ success: true, subscription });
+    }
   } catch (error) {
     console.error("Create Subscription Error:", error.message);
-    res.status(500).json({ error: "Failed to create subscription", details: error.message });
+    res.status(500).json({ error: "Failed to create or update subscription", details: error.message });
   }
 };
 

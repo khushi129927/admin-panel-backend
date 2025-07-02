@@ -1,14 +1,14 @@
 const createAchievementsTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS achievements (
-      achievementId VARCHAR(36) PRIMARY KEY,
-      childId VARCHAR(100),
-      type VARCHAR(50),
-      title TEXT,
-      level VARCHAR(50),
-      date DATE
-    )
-  `;
+  achievementId VARCHAR(36) PRIMARY KEY,
+  childId VARCHAR(100),
+  category VARCHAR(50),
+  description TEXT,
+  rank VARCHAR(50),
+  dateAchieved DATE
+)`;
+
 
   try {
     await db.query(createTableQuery);

@@ -15,7 +15,7 @@ exports.submitEqScore = async (req, res) => {
     );
     res.status(200).json({ message: "EQ score submitted." });
   } catch (err) {
-    res.status(500).json({ error: "Failed to insert EQ score." });
+    res.status(500).json({ error: "Failed to insert EQ score.", details:err.message });
   }
 };
 

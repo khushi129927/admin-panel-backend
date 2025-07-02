@@ -58,7 +58,6 @@ app.use("/api/users", require("./src/routes/userRoute"));
 app.use("/api/task", require("./src/routes/taskRoute"));
 app.use("/api/test", require("./src/routes/testRoute"));
 app.use("/api/subscriptions", require("./src/routes/subscriptionRoute"));
-app.use("/api/eq", require("./src/routes/eqRoute"));
 app.use("/api/coupons", require("./src/routes/couponRoute"));
 app.use("/api/analytics", require("./src/routes/analyticsRoute"));
 app.use("/api/misc", require("./src/routes/miscRoute"));

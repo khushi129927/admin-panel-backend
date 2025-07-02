@@ -48,8 +48,8 @@ exports.createSubscription = async (req, res) => {
     await db.execute(
       "UPDATE users SET razorpay_customer_id = ? WHERE email = ?",
       [customerId, parentEmail]
-    );
-  }
+      );
+    }
 
     // 📦 Step 2: Create subscription
     const subscription = await razorpay.subscriptions.create({

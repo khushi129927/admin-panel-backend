@@ -18,3 +18,6 @@ const createSchoolMarksTable = async () => {
     console.error("❌ Error creating school_marks table:", err.message);
   }
 };
+
+createSchoolMarksTable();
+module.exports = {createSchoolMarksTable};

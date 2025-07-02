@@ -17,3 +17,6 @@ const createAchievementsTable = async () => {
     console.error("❌ Error creating achievements table:", err.message);
   }
 };
+
+createAchievementsTable();
+module.exports = {createAchievementsTable};

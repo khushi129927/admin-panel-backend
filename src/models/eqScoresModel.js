@@ -15,3 +15,6 @@ const createEqScoresTable = async () => {
     console.error("❌ Error creating eq_scores table:", err.message);
   }
 };
+
+createEqScoresTable();
+module.exports = {createEqScoresTable};

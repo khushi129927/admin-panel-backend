@@ -12,7 +12,20 @@ const razorpay = new Razorpay({
 // 1. Create Subscription Per Child
 exports.createSubscription = async (req, res) => {
   try {
-    const { childId, plan_id, customer_email } = req.body;
+    const { childId, planType, customer_email } = req.body;
+
+    // 🔁 Map plan types to actual Razorpay plan IDs
+    const planMap = {
+      monthly: "plan_abc123",       // Replace with your real Razorpay plan IDs
+      six_months: "plan_def456",
+      yearly: "plan_ghi789"
+    };
+
+    const plan_id = planMap[planType];
+
+    if (!plan_id) {
+      return res.status(400).json({ error: "Invalid planType provided" });
+    }
 
     const customer = await razorpay.customers.create({ email: customer_email });
 
@@ -26,10 +39,11 @@ exports.createSubscription = async (req, res) => {
     const subscriptionId = uuidv4();
     const sql = `INSERT INTO subscriptions (subscriptionId, childId, plan, status, razorpay_subscription_id)
                  VALUES (?, ?, ?, ?, ?)`;
+
     await db.execute(sql, [
       subscriptionId,
       childId,
-      plan_id,
+      planType, // Store readable type like "monthly"
       "created",
       subscription.id,
     ]);
@@ -40,6 +54,7 @@ exports.createSubscription = async (req, res) => {
     res.status(500).json({ error: "Failed to create subscription", details: error.message });
   }
 };
+
 
 // 2. Get All Subscriptions
 exports.getSubscriptions = async (req, res) => {

@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const {submitEqScore, getEqTrend, addSchoolMarks, getSchoolMarksTrend, submitAchievement, getAchievementsTrend, getTaskCompletionCount} = require("../controllers/analyticsController");
+const {submitEqScore, getEqTrend, addSchoolMarks, getSchoolMarksTrend, submitAchievement, getAchievements, getTaskCompletionCount} = require("../controllers/analyticsController");
 const auth = require("../middleware/authMiddleware");
 
 // EQ trend line (percentile over time)
@@ -12,7 +12,7 @@ router.get("/school-marks/:childId", auth, getSchoolMarksTrend);
 router.post("/school-marks/submit", auth, addSchoolMarks);
 
 // Achievements trend (sports, arts, etc.)
-router.get("/achievements/:childId", auth, getAchievementsTrend);
+router.get("/achievements/:childId", auth, getAchievements);
 router.post("/achievements/submit", auth, submitAchievement);
 
 // Number of tasks completed

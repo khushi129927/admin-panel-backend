@@ -12,7 +12,7 @@ const razorpay = new Razorpay({
 // 1. Create Razorpay Subscription Only (don't save in DB yet)
 exports.createSubscription = async (req, res) => {
   try {
-    const { childId, planType, customer_email } = req.body;
+    const { childId, planType, parentEmail } = req.body;
 
     const planMap = {
       monthly: "plan_QnTkv9jZTe1SaF",
@@ -23,25 +23,50 @@ exports.createSubscription = async (req, res) => {
     const plan_id = planMap[planType];
     if (!plan_id) return res.status(400).json({ error: "Invalid planType provided" });
 
-    const customer = await razorpay.customers.create({ email: customer_email });
+    // 🔍 Step 1: Check if customer already exists in users table
+    const [userResult] = await db.execute(
+      "SELECT razorpay_customer_id FROM users WHERE email = ?",
+      [parentEmail]
+    );
 
+    if (!userResult.length) {
+      return res.status(404).json({ error: "User not found with this email." });
+    }
+
+    let customerId = userResult[0].razorpay_customer_id;
+
+    // 🆕 Create customer only if not already created
+    if (!customerId) {
+      const customer = await razorpay.customers.create({ email: parentEmail });
+      customerId = customer.id;
+
+      // 💾 Save Razorpay customer ID in users table
+      await db.execute(
+        "UPDATE users SET razorpay_customer_id = ? WHERE email = ?",
+        [customerId, parentEmail]
+      );
+    }
+
+    // 📦 Step 2: Create subscription
     const subscription = await razorpay.subscriptions.create({
       plan_id,
       customer_notify: 1,
       total_count: 12,
-      customer_id: customer.id
+      customer_id: customerId
     });
 
     res.status(200).json({
       success: true,
-      message: "Razorpay subscription created. Awaiting payment confirmation.",
-      subscription
+      message: "Subscription created successfully.",
+      subscription,
+      customerId
     });
   } catch (error) {
     console.error("Create Subscription Error:", error);
     res.status(500).json({ error: "Failed to create subscription", details: error.message });
   }
 };
+
 
 // 2. Get All Subscriptions
 exports.getSubscriptions = async (req, res) => {

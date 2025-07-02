@@ -17,4 +17,3 @@ const createEqScoresTable = async () => {
 };
 
 createEqScoresTable();
-module.exports = {createEqScoresTable};

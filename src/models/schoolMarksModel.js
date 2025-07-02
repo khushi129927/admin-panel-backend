@@ -20,4 +20,3 @@ const createSchoolMarksTable = async () => {
 };
 
 createSchoolMarksTable();
-module.exports = {createSchoolMarksTable};

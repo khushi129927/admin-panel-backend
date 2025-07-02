@@ -1,10 +1,21 @@
 const express = require("express");
 const router = express.Router();
-const {getEQProgress,getCommunityComparison,getTaskCompletionStats} = require("../controllers/analyticsController");
+const {submitEqScore, getEqTrend, addSchoolMarks, getSchoolMarksTrend, submitAchievement, getAchievementsTrend, getTaskCompletionCount} = require("../controllers/analyticsController");
 const auth = require("../middleware/authMiddleware");
 
-router.get("/eq-progress/:userId", auth, getEQProgress);       // 27
-router.get("/community-comparison/:userId", auth, getCommunityComparison); // 28
-router.get("/task-stats/:userId", auth, getTaskCompletionStats); // 29
+// EQ trend line (percentile over time)
+router.get("/eq-trend/:childId", auth, getEqTrend);
+router.post("/eq-trend/submit", auth, submitEqScore);
+
+// School marks trend
+router.get("/school-marks/:childId", auth, getSchoolMarksTrend);
+router.post("/school-marks/submit", auth, addSchoolMarks);
+
+// Achievements trend (sports, arts, etc.)
+router.get("/achievements/:childId", auth, getAchievementsTrend);
+router.post("/achievements/submit", auth, submitAchievement);
+
+// Number of tasks completed
+router.get("/tasks-completed/:childId", auth, getTaskCompletionCount);
 
 module.exports = router;

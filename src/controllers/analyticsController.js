@@ -1,46 +1,126 @@
-const db = require("../config/db");
+// analyticsController.js
+const { v4: uuidv4 } = require('uuid');
+const db = require('../config/db');
 
-// 📈 1. Get EQ Progress (user's score over time)
-exports.getEQProgress = async (req, res) => {
-  const { userId } = req.params;
+exports.submitEqScore = async (req, res) => {
+  const { childId, percentile } = req.body;
+  const eqScoreId = uuidv4();
+  const recorded_at = new Date();
+
   try {
-    const [rows] = await db.execute(
-      `SELECT score, submitted_at FROM eq_results WHERE userId = ? ORDER BY submitted_at ASC`,
-      [userId]
+    await db.query(
+      `INSERT INTO eq_scores (eqScoreId, childId, percentile, recorded_at)
+       VALUES (?, ?, ?, ?)`,
+      [eqScoreId, childId, percentile, recorded_at]
     );
-    res.json({ success: true, progress: rows });
+    res.status(200).json({ message: "EQ score submitted." });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch EQ progress." });
+    res.status(500).json({ error: "Failed to insert EQ score." });
   }
 };
 
-// 🧮 2. Get Community Comparison (avg score vs peers)
-exports.getCommunityComparison = async (req, res) => {
-  const { userId } = req.params;
+
+// 1. Get EQ Trend Line
+exports.getEqTrend = async (req, res) => {
+  const { childId } = req.params;
   try {
-    const [[userScore]] = await db.execute(
-      `SELECT AVG(score) as user_avg FROM eq_results WHERE userId = ?`,
-      [userId]
+    const [rows] = await db.query(
+      'SELECT percentile, createdAt FROM eq_scores WHERE childId = ? ORDER BY createdAt ASC',
+      [childId]
     );
-    const [[allScore]] = await db.execute(
-      `SELECT AVG(score) as global_avg FROM eq_results`
-    );
-    res.json({ success: true, user_avg: userScore.user_avg, global_avg: allScore.global_avg });
+    res.status(200).json({ success: true, data: rows });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch comparison." });
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// 📊 3. Get Task Completion Stats (status count by user)
-exports.getTaskCompletionStats = async (req, res) => {
-  const { userId } = req.params;
+exports.addSchoolMarks = async (req, res) => {
+  const { childId, subject, marks, maxMarks, examType, examDate } = req.body;
+
+  if (!childId || !subject || marks == null || !examDate) {
+    return res.status(400).json({ error: "Missing required fields" });
+  }
+
+  const markId = uuidv4();
+
   try {
-    const [stats] = await db.execute(
-      `SELECT status, COUNT(*) as count FROM task_assignments WHERE userId = ? GROUP BY status`,
-      [userId]
-    );
-    res.json({ success: true, stats });
+    const query = `
+      INSERT INTO school_marks (markId, childId, subject, marks, maxMarks, examType, examDate)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+
+    await db.query(query, [
+      markId,
+      childId,
+      subject,
+      marks,
+      maxMarks || null,
+      examType || null,
+      examDate,
+    ]);
+
+    res.status(201).json({ success: true, message: "Marks added successfully" });
   } catch (err) {
-    res.status(500).json({ error: "Failed to fetch task stats." });
+    console.error("❌ Error adding marks:", err.message);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+};
+
+// 2. Get School Marks Trend
+exports.getSchoolMarksTrend = async (req, res) => {
+  const { childId } = req.params;
+  try {
+    const [rows] = await db.query(
+      'SELECT subject, marks, maxMarks, examType, examDate FROM school_marks WHERE childId = ? ORDER BY examDate ASC',
+      [childId]
+    );
+    res.status(200).json({ success: true, data: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+exports.submitAchievement = async (req, res) => {
+  const { childId, category, description, rank, dateAchieved } = req.body;
+  const achievementId = uuidv4();
+
+  try {
+    await db.query(
+      `INSERT INTO achievements (achievementId, childId, category, description, rank, dateAchieved)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+      [achievementId, childId, category, description, rank, dateAchieved]
+    );
+    res.status(200).json({ message: "Achievement submitted." });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to insert achievement." });
+  }
+};
+
+
+// 3. Get Achievement Trend
+exports.getAchievements = async (req, res) => {
+  const { childId } = req.params;
+  try {
+    const [rows] = await db.query(
+      'SELECT type, title, level, date FROM achievements WHERE childId = ? ORDER BY date ASC',
+      [childId]
+    );
+    res.status(200).json({ success: true, data: rows });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// 4. Get Number of Tasks Completed
+exports.getTaskCompletionCount = async (req, res) => {
+  const { childId } = req.params;
+  try {
+    const [rows] = await db.query(
+      'SELECT COUNT(*) AS totalTasks FROM task_scores WHERE childId = ?',
+      [childId]
+    );
+    res.status(200).json({ success: true, data: rows[0] });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };

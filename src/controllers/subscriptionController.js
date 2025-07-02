@@ -37,15 +37,19 @@ exports.createSubscription = async (req, res) => {
 
     // 🆕 Create customer only if not already created
     if (!customerId) {
-      const customer = await razorpay.customers.create({ email: parentEmail });
-      customerId = customer.id;
+    const customer = await razorpay.customers.create({ email: parentEmail });
+    customerId = customer.id;
 
-      // 💾 Save Razorpay customer ID in users table
-      await db.execute(
-        "UPDATE users SET razorpay_customer_id = ? WHERE email = ?",
-        [customerId, parentEmail]
-      );
+    if (!parentEmail || !customerId) {
+      return res.status(400).json({ error: "Invalid parentEmail or customerId." });
     }
+
+    // Save Razorpay customer ID in users table
+    await db.execute(
+      "UPDATE users SET razorpay_customer_id = ? WHERE email = ?",
+      [customerId, parentEmail]
+    );
+  }
 
     // 📦 Step 2: Create subscription
     const subscription = await razorpay.subscriptions.create({

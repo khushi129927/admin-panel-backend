@@ -1,38 +1,34 @@
-// Add at the top with other imports
+// subscriptionController.js
 const Razorpay = require("razorpay");
+const { v4: uuidv4 } = require("uuid");
+const db = require("../config/db");
+const crypto = require("crypto");
+
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID,
   key_secret: process.env.RAZORPAY_KEY_SECRET,
 });
 
-const db = require("../config/db");
-const { v4: uuidv4 } = require("uuid");
-
-// ✅ 1. Create Razorpay Subscription
-// ✅ 1. Create Razorpay Subscription with Customer Creation
+// 1. Create Subscription Per Child
 exports.createSubscription = async (req, res) => {
   try {
-    const { userId, plan_id, customer_email } = req.body;
+    const { childId, plan_id, customer_email } = req.body;
 
-    // 🔹 Step 1: Create Razorpay Customer
-    const customer = await razorpay.customers.create({
-      email: customer_email
-    });
+    const customer = await razorpay.customers.create({ email: customer_email });
 
-    // 🔹 Step 2: Create Subscription using customer_id
     const subscription = await razorpay.subscriptions.create({
       plan_id,
       customer_notify: 1,
       total_count: 12,
-      customer_id: customer.id
+      customer_id: customer.id,
     });
 
-    // 🔹 Step 3: Save in your database
     const subscriptionId = uuidv4();
-    const sql = "INSERT INTO subscriptions (subscriptionId, userId, plan, status, razorpay_subscription_id) VALUES (?, ?, ?, ?, ?)";
+    const sql = `INSERT INTO subscriptions (subscriptionId, childId, plan, status, razorpay_subscription_id)
+                 VALUES (?, ?, ?, ?, ?)`;
     await db.execute(sql, [
       subscriptionId,
-      userId,
+      childId,
       plan_id,
       "created",
       subscription.id,
@@ -40,28 +36,26 @@ exports.createSubscription = async (req, res) => {
 
     res.status(201).json({ success: true, subscription });
   } catch (error) {
-    console.error("❌ Razorpay Create Subscription Error:", error.message);
-    res.status(500).json({ details: error.message, error: "Failed to create subscription" });
+    console.error("Create Subscription Error:", error.message);
+    res.status(500).json({ error: "Failed to create subscription", details: error.message });
   }
 };
 
-
-// ✅ 2. Get All Subscriptions
+// 2. Get All Subscriptions
 exports.getSubscriptions = async (req, res) => {
   try {
     const [results] = await db.execute("SELECT * FROM subscriptions");
     res.status(200).json({ success: true, data: results });
   } catch (error) {
-    console.error("❌ Get Subscriptions Error:", error);
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };
 
-// 🔍 3. Get Single User's Subscription
+// 3. Get Subscription by Child
 exports.getSubscription = async (req, res) => {
-  const { userId } = req.params;
+  const { childId } = req.params;
   try {
-    const [results] = await db.execute("SELECT * FROM subscriptions WHERE userId = ?", [userId]);
+    const [results] = await db.execute("SELECT * FROM subscriptions WHERE childId = ?", [childId]);
     if (!results.length) return res.status(404).json({ error: "Subscription not found" });
     res.status(200).json({ success: true, subscription: results[0] });
   } catch (err) {
@@ -69,13 +63,13 @@ exports.getSubscription = async (req, res) => {
   }
 };
 
-// 🔄 4. Update Subscription
+// 4. Update Subscription
 exports.updateSubscription = async (req, res) => {
-  const { userId, plan, status } = req.body;
+  const { childId, plan, status } = req.body;
   try {
     await db.execute(
-      "UPDATE subscriptions SET plan = ?, status = ? WHERE userId = ?",
-      [plan, status, userId]
+      "UPDATE subscriptions SET plan = ?, status = ? WHERE childId = ?",
+      [plan, status, childId]
     );
     res.json({ success: true, message: "Subscription updated." });
   } catch (err) {
@@ -83,13 +77,13 @@ exports.updateSubscription = async (req, res) => {
   }
 };
 
-// 💳 5. Get Payment History
+// 5. Payment History per Child
 exports.getPaymentHistory = async (req, res) => {
-  const { userId } = req.params;
+  const { childId } = req.params;
   try {
     const [payments] = await db.execute(
-      "SELECT * FROM payments WHERE userId = ? ORDER BY created_at DESC",
-      [userId]
+      "SELECT * FROM payments WHERE childId = ? ORDER BY created_at DESC",
+      [childId]
     );
     res.json({ success: true, payments });
   } catch (err) {
@@ -97,53 +91,124 @@ exports.getPaymentHistory = async (req, res) => {
   }
 };
 
-
-// ✅ 6. Verify Subscription Payment
+// 6. Verify Subscription Payment
 exports.verifySubscriptionPayment = async (req, res) => {
-  const crypto = require("crypto");
-  const db = require("../config/db");
-  const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, userId, amount } = req.body;
-
+  const { razorpay_payment_id, razorpay_subscription_id, razorpay_signature, childId, amount } = req.body;
   try {
-    const isDev = process.env.NODE_ENV === "development"; // ✅ Dev mode check
+    const generated_signature = crypto
+      .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
+      .update(razorpay_payment_id + "|" + razorpay_subscription_id)
+      .digest("hex");
 
-    let verified = false;
-
-    if (isDev) {
-      console.log("🧪 Dev mode: Skipping signature verification.");
-      verified = true;
-    } else {
-      const generated_signature = crypto
-        .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET)
-        .update(razorpay_payment_id + "|" + razorpay_subscription_id)
-        .digest("hex");
-
-      verified = generated_signature === razorpay_signature;
-    }
+    const verified = generated_signature === razorpay_signature;
 
     if (!verified) {
       return res.status(400).json({ success: false, message: "Invalid signature" });
     }
 
-    // Insert into payments table
-    const sql = `
-      INSERT INTO payments (paymentId, userId, amount, razorpay_payment_id, razorpay_subscription_id, razorpay_signature, status)
-      VALUES (?, ?, ?, ?, ?, ?, ?)
-    `;
-    const paymentId = razorpay_payment_id; // or use uuid if needed
+    const sql = `INSERT INTO payments (paymentId, childId, amount, razorpay_payment_id, razorpay_subscription_id, razorpay_signature, status)
+                 VALUES (?, ?, ?, ?, ?, ?, ?)`;
     await db.execute(sql, [
-      paymentId,
-      userId,
+      razorpay_payment_id,
+      childId,
       amount,
       razorpay_payment_id,
       razorpay_subscription_id,
       razorpay_signature,
-      "paid"
+      "paid",
     ]);
 
     return res.status(200).json({ success: true, message: "Payment verified and stored" });
   } catch (err) {
-    console.error("❌ Payment verification error:", err);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
+exports.handleWebhook = async (req, res) => {
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  const signature = req.headers["x-razorpay-signature"];
+  const body = JSON.stringify(req.body);
+
+  const expectedSignature = crypto
+    .createHmac("sha256", secret)
+    .update(body)
+    .digest("hex");
+
+  if (expectedSignature !== signature) {
+    return res.status(400).json({ error: "Invalid webhook signature" });
+  }
+
+  const event = req.body.event;
+  const payload = req.body.payload;
+
+  try {
+    switch (event) {
+      case "subscription.charged": {
+        const payment = payload.payment.entity;
+        const subscription_id = payment.subscription_id;
+
+        const [sub] = await db.execute(
+          "SELECT childId FROM subscriptions WHERE razorpay_subscription_id = ?",
+          [subscription_id]
+        );
+
+        if (!sub.length) break;
+
+        const { childId } = sub[0];
+        const paymentId = payment.id;
+        const amount = payment.amount / 100;
+
+        await db.execute(
+          `INSERT INTO payments (paymentId, childId, amount, razorpay_payment_id, razorpay_subscription_id, status)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [paymentId, childId, amount, paymentId, subscription_id, "paid"]
+        );
+        break;
+      }
+
+      case "payment.failed": {
+        const payment = payload.payment.entity;
+        const subscription_id = payment.subscription_id;
+
+        const [sub] = await db.execute(
+          "SELECT childId FROM subscriptions WHERE razorpay_subscription_id = ?",
+          [subscription_id]
+        );
+
+        if (!sub.length) break;
+
+        const { childId } = sub[0];
+        const paymentId = payment.id;
+        const amount = payment.amount / 100;
+
+        await db.execute(
+          `INSERT INTO payments (paymentId, childId, amount, razorpay_payment_id, razorpay_subscription_id, status)
+           VALUES (?, ?, ?, ?, ?, ?)`,
+          [paymentId, childId, amount, paymentId, subscription_id, "failed"]
+        );
+        break;
+      }
+
+      case "subscription.completed":
+      case "subscription.halted": {
+        const subscription_id = payload.subscription.entity.id;
+        const status = event === "subscription.completed" ? "completed" : "halted";
+
+        await db.execute(
+          "UPDATE subscriptions SET status = ? WHERE razorpay_subscription_id = ?",
+          [status, subscription_id]
+        );
+        break;
+      }
+
+      default:
+        console.log("Unhandled event:", event);
+    }
+
+    res.status(200).json({ success: true });
+  } catch (err) {
+    console.error("Webhook error:", err.message);
+    res.status(500).json({ error: "Webhook handling failed" });
+  }
+};
+

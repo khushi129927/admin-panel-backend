@@ -1,20 +1,24 @@
 const db = require("../config/db");
 
-const createReviewsTable = async () => {
-  const query = `
-    CREATE TABLE IF NOT EXISTS reviews (
-      reviewsId VARCHAR(36) PRIMARY KEY,
-      name VARCHAR(100),
-      review TEXT NOT NULL,
-      rating INT CHECK (rating BETWEEN 1 AND 5),
-      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-    )`;
+const createPaymentsTable = async () => {
   try {
-    await db.query(query);
-    console.log("✅ Reviews table created.");
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS payments (
+        paymentId VARCHAR(50) PRIMARY KEY,
+        childId VARCHAR(36) NOT NULL,
+        amount DECIMAL(10,2) NOT NULL,
+        razorpay_payment_id VARCHAR(100),
+        razorpay_subscription_id VARCHAR(100),
+        razorpay_signature TEXT,
+        status VARCHAR(20),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (childId) REFERENCES children(childId) ON DELETE CASCADE
+      )
+    `);
+    console.log("✅ payments table created or already exists.");
   } catch (err) {
-    console.error("❌ Reviews table error:", err.message);
+    console.error("❌ Error creating payments table:", err.message);
   }
 };
 
-createReviewsTable();
+module.exports = createPaymentsTable;

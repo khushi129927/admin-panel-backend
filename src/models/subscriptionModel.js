@@ -4,7 +4,8 @@ const createSubscriptionTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS subscriptions (
       subscriptionId VARCHAR(36) PRIMARY KEY,
-      userId VARCHAR(36) NOT NULL,
+      userId VARCHAR(36),
+      childId VARCHAR(36),
       plan VARCHAR(255) NOT NULL,
       status ENUM('active', 'inactive') NOT NULL,
       FOREIGN KEY (userId) REFERENCES users(userId) ON DELETE CASCADE

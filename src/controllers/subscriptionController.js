@@ -155,12 +155,16 @@ exports.verifySubscriptionPayment = async (req, res) => {
       verified = generated_signature === razorpay_signature;
     }
 
+    console.log("NODE_ENV is", process.env.NODE_ENV);
+
+
     if (!verified) {
       return res.status(400).json({ success: false, message: "Invalid signature" });
     }
 
     const sql = `INSERT INTO payments (paymentId, childId, amount, razorpay_payment_id, razorpay_subscription_id, razorpay_signature, status)
                  VALUES (?, ?, ?, ?, ?, ?, ?)`;
+
 
     await db.execute(sql, [
       razorpay_payment_id,

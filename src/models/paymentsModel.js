@@ -4,7 +4,7 @@ const createPaymentsTable = async () => {
   const query = `
     CREATE TABLE IF NOT EXISTS payments (
       paymentId VARCHAR(100) PRIMARY KEY,
-      userId VARCHAR(100) NOT NULL,
+      childId VARCHAR(100) NOT NULL,
       amount DECIMAL(10, 2) NOT NULL,
       currency VARCHAR(10) DEFAULT 'INR',
       razorpay_payment_id VARCHAR(100) NOT NULL,

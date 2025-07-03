@@ -135,12 +135,12 @@ exports.verifySubscriptionPayment = async (req, res) => {
     razorpay_subscription_id,
     razorpay_signature,
     childId,
-    amount
+    amount,
+    plan // pass this from frontend: 'monthly', '6-months', 'yearly', etc.
   } = req.body;
 
   try {
     const isTestMode = process.env.NODE_ENV !== "production";
-
     let verified = false;
 
     if (isTestMode) {
@@ -155,19 +155,18 @@ exports.verifySubscriptionPayment = async (req, res) => {
       verified = generated_signature === razorpay_signature;
     }
 
-    console.log("NODE_ENV is", process.env.NODE_ENV);
-
-
     if (!verified) {
       return res.status(400).json({ success: false, message: "Invalid signature" });
     }
 
-    const sql = `INSERT INTO payments (paymentId, childId, amount, razorpay_payment_id, razorpay_subscription_id, razorpay_signature, status)
-                 VALUES (?, ?, ?, ?, ?, ?, ?)`;
-
-
-    await db.execute(sql, [
-      razorpay_payment_id,
+    // ✅ Insert into payments table
+    const paymentId = razorpay_payment_id;
+    const paymentSql = `
+      INSERT INTO payments (paymentId, childId, amount, razorpay_payment_id, razorpay_subscription_id, razorpay_signature, status)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `;
+    await db.execute(paymentSql, [
+      paymentId,
       childId,
       amount,
       razorpay_payment_id,
@@ -176,7 +175,22 @@ exports.verifySubscriptionPayment = async (req, res) => {
       "paid"
     ]);
 
-    return res.status(200).json({ success: true, message: "Test payment verified and saved." });
+    // ✅ Insert into subscriptions table
+    const subscriptionId = uuidv4();
+    const subscriptionSql = `
+      INSERT INTO subscriptions (subscriptionId, childId, plan, status, razorpay_subscription_id)
+      VALUES (?, ?, ?, ?, ?)
+    `;
+    await db.execute(subscriptionSql, [
+      subscriptionId,
+      childId,
+      plan || "monthly",
+      "active",
+      razorpay_subscription_id
+    ]);
+
+    return res.status(200).json({ success: true, message: "Payment and subscription saved." });
+
   } catch (err) {
     console.error("❌ Payment verification error:", err);
     res.status(500).json({ error: "Internal Server Error", details: err.message });

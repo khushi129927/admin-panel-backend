@@ -179,7 +179,7 @@ exports.verifySubscriptionPayment = async (req, res) => {
     return res.status(200).json({ success: true, message: "Test payment verified and saved." });
   } catch (err) {
     console.error("❌ Payment verification error:", err);
-    res.status(500).json({ error: "Internal Server Error" });
+    res.status(500).json({ error: "Internal Server Error", details: err.message });
   }
 };
 

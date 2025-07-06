@@ -33,9 +33,9 @@ exports.createSubscription = async (req, res) => {
 
     // 🔁 Step 3: Map plan types to Razorpay plan IDs
     const planMap = {
-      monthly: "plan_QnTkv9jZTe1SaF",
-      six_months: "plan_QnTpLcL3acuGsQ",
-      yearly: "plan_QnTpjaSYfnBI2z"
+      monthly: process.env.PLAN_MONTHLY,
+      six_months: process.env.PLAN_SIX_MONTHS,
+      yearly: process.env.PLAN_YEARLY
     };
 
     const plan_id = planMap[planType];

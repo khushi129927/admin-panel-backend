@@ -69,6 +69,7 @@ app.use("/api/auth", require("./src/routes/authRoute"));
 app.use("/api/otp", require("./src/routes/otpRoute"));
 app.use("/api/testScore", require("./src/routes/testScoreRoute"));
 app.use("/api/taskScore", require("./src/routes/taskScoreRoute"));
+app.use("/api/password", require("./src/routes/passwordRoute"));
 
 app.get("/api/ping", (req, res) => {
   res.send("✅ Server is up!");

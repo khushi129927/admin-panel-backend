@@ -16,7 +16,9 @@ const initUserInheritance = async () => {
         profession VARCHAR(255),
         hobbies TEXT,
         type VARCHAR(10),
-        favourite_food VARCHAR(255)
+        favourite_food VARCHAR(255),
+        reset_token VARCHAR(255),
+        reset_token_expiry DATETIME
       );
     `);
 

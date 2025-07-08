@@ -1,3 +1,5 @@
+const db = require("../config/db");
+
 const createAchievementsTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS achievements (

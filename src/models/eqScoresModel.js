@@ -1,3 +1,5 @@
+const db = require("../config/db");
+
 const createEqScoresTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS eq_scores (

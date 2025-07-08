@@ -1,3 +1,5 @@
+const db = require("../config/db");
+
 const createSchoolMarksTable = async () => {
   const createTableQuery = `
     CREATE TABLE IF NOT EXISTS school_marks (

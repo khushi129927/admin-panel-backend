@@ -7,7 +7,7 @@ const createAchievementsTable = async () => {
   childId VARCHAR(100),
   category VARCHAR(50),
   description TEXT,
-  rank VARCHAR(50),
+  \`rank\` VARCHAR(50),
   dateAchieved DATE
 )`;
 

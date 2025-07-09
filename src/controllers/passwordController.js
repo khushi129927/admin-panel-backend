@@ -3,6 +3,9 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 
+const crypto = require("crypto");
+const db = require("../config/db");
+
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
 
@@ -10,42 +13,27 @@ exports.forgotPassword = async (req, res) => {
     return res.status(400).json({ error: "Email is required" });
 
   try {
+    // 🔍 Check if user with email exists
     const [users] = await db.execute("SELECT * FROM users WHERE email = ?", [email]);
 
     if (!users.length)
       return res.status(404).json({ error: "No user found with this email" });
 
+    // 🔐 Generate token and expiry
     const token = crypto.randomBytes(32).toString("hex");
-    const expiry = new Date(Date.now() + 3600000); // 1 hour from now
+    const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
+    // 🛠️ Save token in DB
     await db.execute(
       "UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?",
       [token, expiry, email]
     );
 
-    const resetLink = `https://yourfrontend.com/reset-password?token=${token}`;
-
-    // Send email (optional - production only)
-    const transporter = nodemailer.createTransport({
-      service: "gmail",
-      auth: {
-        user: process.env.MAIL_USER,
-        pass: process.env.MAIL_PASS,
-      },
-    });
-
-    await transporter.sendMail({
-      from: process.env.MAIL_USER,
-      to: email,
-      subject: "Reset your NeuroEQ password",
-      html: `<p>Click <a href="${resetLink}">here</a> to reset your password. This link is valid for 1 hour.</p>`,
-    });
-
-    // ✅ Include token for testing/debugging
+    // ✅ Return token in response (for backend-only verification flow)
     res.status(200).json({
       success: true,
-      message: "Reset link sent to email.",
-      tokenFromEmail: token // remove this in production
+      message: "Token generated. You can now reset your password using this token.",
+      tokenFromEmail: token, // ❗ Show this ONLY if you're not using email verification
     });
 
   } catch (err) {
@@ -53,6 +41,7 @@ exports.forgotPassword = async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 exports.resetPassword = async (req, res) => {

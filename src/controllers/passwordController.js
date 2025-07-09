@@ -3,8 +3,6 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 
-const crypto = require("crypto");
-const db = require("../config/db");
 
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;

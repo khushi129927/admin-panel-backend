@@ -110,3 +110,14 @@ const server = app.listen(PORT, () => {
   console.log(`🚀 Server live @ http://localhost:${PORT}`);
 });
 server.setTimeout(5 * 60 * 1000); // 5 mins
+
+
+app.get("/db-test", async (req, res) => {
+  try {
+    const [rows] = await db.query("SELECT NOW() AS time;");
+    res.json({ dbTime: rows[0].time });
+  } catch (err) {
+    console.error("❌ DB Test Error:", err.message);
+    res.status(500).json({ error: "Database not connected" });
+  }
+});

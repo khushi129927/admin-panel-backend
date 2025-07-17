@@ -104,14 +104,6 @@ app.get("/api/test-db", async (req, res) => {
   }
 });
 
-// ✅ Start Express Server
-const PORT = process.env.PORT || 8080;
-const server = app.listen(PORT, () => {
-  console.log(`🚀 Server live @ http://localhost:${PORT}`);
-});
-server.setTimeout(5 * 60 * 1000); // 5 mins
-
-
 app.get("/db-test", async (req, res) => {
   try {
     const [rows] = await db.query("SELECT NOW() AS time;");
@@ -121,3 +113,13 @@ app.get("/db-test", async (req, res) => {
     res.status(500).json({ error: "Database not connected" });
   }
 });
+
+// ✅ Start Express Server
+const PORT = process.env.PORT || 3000;
+const server = app.listen(PORT, () => {
+  console.log(`🚀 Server live @ http://localhost:${PORT}`);
+});
+server.setTimeout(5 * 60 * 1000); // 5 mins
+
+
+

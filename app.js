@@ -104,15 +104,15 @@ app.get("/api/test-db", async (req, res) => {
   }
 });
 
-app.get("/db-test", async (req, res) => {
+app.get('/db-test', async (req, res) => {
   try {
-    const [rows] = await db.query("SELECT NOW() AS time;");
-    res.json({ dbTime: rows[0].time });
+    const [rows] = await pool.query('SELECT 1 + 1 AS result');
+    res.json({ db: 'connected', result: rows[0].result });
   } catch (err) {
-    console.error("❌ DB Test Error:", err.message);
-    res.status(500).json({ error: "Database not connected" });
+    res.status(500).json({ db: 'error', message: err.message });
   }
 });
+
 
 // ✅ Start Express Server
 const PORT = process.env.PORT || 3000;

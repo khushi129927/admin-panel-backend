@@ -114,6 +114,10 @@ app.get('/db-test', async (req, res) => {
   }
 });
 
+app.get('/health', (req, res) => {
+  res.send('OK');
+});
+
 
 
 // ✅ Start Express Server

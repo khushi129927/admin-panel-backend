@@ -106,12 +106,14 @@ app.get("/api/test-db", async (req, res) => {
 
 app.get('/db-test', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT 1 + 1 AS result');
+    const [rows] = await db.query('SELECT 1 + 1 AS result');
     res.json({ db: 'connected', result: rows[0].result });
   } catch (err) {
+    console.error('DB Test Error:', err.message); // log it!
     res.status(500).json({ db: 'error', message: err.message });
   }
 });
+
 
 
 // ✅ Start Express Server

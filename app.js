@@ -75,25 +75,6 @@ app.get("/api/ping", (req, res) => {
   res.send("✅ Server is up!");
 });
 
-app.get("*", (req, res) => {
-  res.status(404).json({ error: "Not Found" });
-});
-
-// ✅ Global Error Handler
-app.use((err, req, res, next) => {
-  console.error("❌ Unhandled Error:", err.stack);
-  res.status(500).json({ error: "Internal Server Error", details: err.message });
-});
-
-app.use((err, req, res, next) => {
-  console.error("❌ Error URL:", req.originalUrl);
-  console.error("❌ Method:", req.method);
-  console.error("❌ Headers:", req.headers);
-  console.error("❌ Stack:", err.stack);
-  res.status(500).json({ error: "Internal Server Error", details: err.message });
-});
-
-
 // ✅ Database Test Endpoint
 app.get("/api/test-db", async (req, res) => {
   try {
@@ -117,6 +98,27 @@ app.get('/db-test', async (req, res) => {
 app.get('/health', (req, res) => {
   res.send('OK');
 });
+
+
+app.get("*", (req, res) => {
+  res.status(404).json({ error: "Not Found" });
+});
+
+// ✅ Global Error Handler
+app.use((err, req, res, next) => {
+  console.error("❌ Unhandled Error:", err.stack);
+  res.status(500).json({ error: "Internal Server Error", details: err.message });
+});
+
+app.use((err, req, res, next) => {
+  console.error("❌ Error URL:", req.originalUrl);
+  console.error("❌ Method:", req.method);
+  console.error("❌ Headers:", req.headers);
+  console.error("❌ Stack:", err.stack);
+  res.status(500).json({ error: "Internal Server Error", details: err.message });
+});
+
+
 
 
 

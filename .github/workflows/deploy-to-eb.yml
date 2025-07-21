@@ -1,0 +1,47 @@
+name: 🚀 Deploy to Elastic Beanstalk
+
+on:
+  push:
+    branches:
+      - main  # change if your default branch is not 'main'
+
+jobs:
+  deploy:
+    name: Deploy to AWS EB
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout repository
+        uses: actions/checkout@v4
+
+      - name: 🐍 Set up Python (for EB CLI)
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 🛠️ Install EB CLI
+        run: |
+          pip install --upgrade pip
+          pip install awsebcli
+
+      - name: 🔐 Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: 🧠 Initialize EB project
+        run: |
+          mkdir -p .elasticbeanstalk
+          echo "global:
+  application_name: ${{ secrets.EB_APP_NAME }}
+  default_region: ${{ secrets.AWS_REGION }}
+  profile: null
+  workspace_type: Application" > .elasticbeanstalk/config.yml
+
+      - name: 🚀 Deploy to Elastic Beanstalk
+        run: |
+          eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Node.js" --verbose
+          eb use ${{ secrets.EB_ENV_NAME }}
+          eb deploy --staged --timeout 20

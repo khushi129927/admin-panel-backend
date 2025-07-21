@@ -40,4 +40,7 @@ jobs:
         run: |
           eb init ${{ secrets.EB_APP_NAME }} --region ${{ secrets.AWS_REGION }} --platform "Node.js" --verbose
           eb use ${{ secrets.EB_ENV_NAME }}
-          eb deploy --staged --timeout 20
+          eb deploy --staged --timeout 20 \
+            --label "ci-deploy-$(date +'%Y%m%d%H%M%S')" \
+            --message "CI/CD deployment from GitHub Actions"
+

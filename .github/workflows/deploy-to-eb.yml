@@ -3,7 +3,7 @@ name: 🚀 Deploy to Elastic Beanstalk
 on:
   push:
     branches:
-      - main  # change if your default branch is not 'main'
+      - main  # update if your default branch is not 'main'
 
 jobs:
   deploy:
@@ -31,7 +31,7 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: 🧠 Initialize EB project
+      - name: 🧠 Initialize EB project config file
         run: |
           mkdir -p .elasticbeanstalk
           echo "global:

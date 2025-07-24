@@ -7,7 +7,7 @@ const initUserInheritance = async () => {
         userId VARCHAR(36) PRIMARY KEY,
         name VARCHAR(255),
         dob DATE,
-        email VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE,
         password VARCHAR(255) NOT NULL,
         -- Parent-specific fields
         razorpay_customer_id VARCHAR(255),

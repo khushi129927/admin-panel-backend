@@ -498,7 +498,7 @@ exports.updateLocation = async (req, res) => {
     res.status(200).json({ success: true });
   } catch (error) {
     console.error("❌ Update Location Error:", error.message);
-    res.status(500).json({ error: "Failed to update location" });
+    res.status(500).json({ error: "Failed to update location", message: error.message });
   }
 };
 

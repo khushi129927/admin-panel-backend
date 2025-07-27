@@ -102,7 +102,7 @@ exports.getAchievements = async (req, res) => {
   const { childId } = req.params;
   try {
     const [rows] = await db.query(
-      'SELECT type, title, level, date FROM achievements WHERE childId = ? ORDER BY date ASC',
+      'SELECT category, description, `rank`, dateAchieved FROM achievements WHERE childId = ? ORDER BY dateAchieved ASC',
       [childId]
     );
     res.status(200).json({ success: true, data: rows });

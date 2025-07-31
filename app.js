@@ -36,6 +36,7 @@ const allowedOrigins = [
   "capacitor://localhost",
   "http://localhost",
   "https://admin-panel-backend-production-dd28.up.railway.app",
+  "http://neuroeq-env-1.eba-ex2g2zu6.ap-south-1.elasticbeanstalk.com",
 ];
 
 app.use(cors({

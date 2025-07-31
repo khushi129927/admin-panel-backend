@@ -55,6 +55,8 @@ app.use(cors({
 // ✅ Serve React Build
 app.use(express.static(path.join(__dirname, "admin-panel-frontend", "build")));
 
+app.use(express.urlencoded({ extended: true })); // For form handling
+
 
 // ✅ API Routes
 app.use("/api/users", require("./src/routes/userRoute"));

@@ -18,7 +18,8 @@ const initUserInheritance = async () => {
         type VARCHAR(10),
         favourite_food VARCHAR(255),
         reset_token VARCHAR(255),
-        reset_token_expiry DATETIME
+        reset_token_expiry DATETIME,
+        last_password_updated DATETIME DEFAULT NULL
       );
     `);
 

@@ -3,7 +3,6 @@ const crypto = require("crypto");
 const bcrypt = require("bcrypt");
 const nodemailer = require("nodemailer");
 
-
 exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
 
@@ -11,34 +10,57 @@ exports.forgotPassword = async (req, res) => {
     return res.status(400).json({ error: "Email is required" });
 
   try {
-    // 🔍 Check if user with email exists
+    // 1️⃣ Check if user exists
     const [users] = await db.execute("SELECT * FROM users WHERE email = ?", [email]);
 
     if (!users.length)
       return res.status(404).json({ error: "No user found with this email" });
 
-    // 🔐 Generate token and expiry
+    // 2️⃣ Generate reset token & expiry
     const token = crypto.randomBytes(32).toString("hex");
     const expiry = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
 
-    // 🛠️ Save token in DB
+    // 3️⃣ Save token in DB
     await db.execute(
       "UPDATE users SET reset_token = ?, reset_token_expiry = ? WHERE email = ?",
       [token, expiry, email]
     );
 
-    // ✅ Return token in response (for backend-only verification flow)
-    res.status(200).json({
-      success: true,
-      message: "Token generated. You can now reset your password using this token.",
-      tokenFromEmail: token, // ❗ Show this ONLY if you're not using email verification
+    // 4️⃣ Send email using Nodemailer
+    const transporter = nodemailer.createTransport({
+      service: "gmail", // Or use "hotmail", "outlook", etc., depending on your email provider
+      auth: {
+        user: process.env.MAIL_USER,
+        pass: process.env.MAIL_PASS,
+      },
     });
 
+    const resetLink = `http://yourfrontend.com/reset-password?token=${token}`; // 👈 Replace with your actual frontend URL
+
+    const mailOptions = {
+      from: process.env.MAIL_USER,
+      to: email,
+      subject: "Password Reset Request",
+      html: `
+        <h3>Password Reset</h3>
+        <p>Click the link below to reset your password:</p>
+        <a href="${resetLink}">${resetLink}</a>
+        <p>This link will expire in 1 hour.</p>
+      `,
+    };
+
+    await transporter.sendMail(mailOptions);
+
+    res.status(200).json({
+      success: true,
+      message: "Reset link has been sent to your email.",
+    });
   } catch (err) {
     console.error("❌ Forgot Password Error:", err.message);
     res.status(500).json({ error: "Internal Server Error" });
   }
 };
+
 
 
 

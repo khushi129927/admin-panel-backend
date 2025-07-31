@@ -14,47 +14,51 @@ router.get("/reset-password", (req, res) => {
   // Serve the advanced HTML with token in query string
   res.send(`
     <!DOCTYPE html>
-    <html lang="en">
-    <head>
-      <meta charset="UTF-8">
-      <title>Reset Your Password</title>
-      <style>
-        body { font-family: Arial, sans-serif; margin: 2rem; }
-        .form-group { margin-bottom: 1rem; }
-      </style>
-    </head>
-    <body>
-      <h2>Reset Your Password</h2>
-      <form id="resetForm" method="POST">
-        <div class="form-group">
-          <label for="newPassword">New Password:</label>
-          <input type="password" id="newPassword" name="newPassword" required>
-          <button type="button" onclick="togglePassword()">Show</button>
-        </div>
-        <button type="submit">Reset Password</button>
-      </form>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Reset Password</title>
+</head>
+<body>
+  <h2>Reset Your Password</h2>
+  <form id="resetForm" method="POST" action="/api/password/reset-password">
+    <!-- token will be filled by JS -->
+    <input type="hidden" name="token" id="token" />
 
-      <script>
-        function togglePassword() {
-          const passwordInput = document.getElementById("newPassword");
-          const toggleButton = event.target;
+    <label for="newPassword">New Password:</label><br/>
+    <input type="password" name="newPassword" id="newPassword" required />
+    <button type="button" id="toggleBtn">Show</button><br/><br/>
 
-          if (passwordInput.type === "password") {
-            passwordInput.type = "text";
-            toggleButton.textContent = "Hide";
-          } else {
-            passwordInput.type = "password";
-            toggleButton.textContent = "Show";
-          }
-        }
+    <button type="submit">Reset Password</button>
+  </form>
 
-        document.addEventListener("DOMContentLoaded", () => {
-          const form = document.getElementById("resetForm");
-          form.action = "/api/password/reset-password?token=${token}";
-        });
-      </script>
-    </body>
-    </html>
+  <p id="msg"></p>
+
+  <script>
+    // extract token from URL and set hidden field
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("token");
+    if (token) {
+      document.getElementById("token").value = token;
+    } else {
+      document.getElementById("msg").textContent = "Missing token in URL.";
+    }
+
+    // show/hide toggle
+    document.getElementById("toggleBtn").addEventListener("click", () => {
+      const pwd = document.getElementById("newPassword");
+      if (pwd.type === "password") {
+        pwd.type = "text";
+        document.getElementById("toggleBtn").textContent = "Hide";
+      } else {
+        pwd.type = "password";
+        document.getElementById("toggleBtn").textContent = "Show";
+      }
+    });
+  </script>
+</body>
+</html>
+
   `);
 });
 

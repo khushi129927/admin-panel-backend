@@ -10,7 +10,11 @@ router.get("/reset-password", (req, res) => {
   const type = req.query.type || "";
 
   if (!token) {
-    return res.status(400).send("<h3>Invalid or missing token</h3>");
+    return res.send(`
+      <div style="padding: 20px; background: #ffdddd; color: #b40000; text-align: center;">
+        Invalid or missing token
+      </div>
+    `);
   }
 
   res.send(`
@@ -62,7 +66,7 @@ router.get("/reset-password", (req, res) => {
       top: 50%;
       transform: translateY(-50%);
       cursor: pointer;
-      font-size: 18px;
+      font-size: 14px;
       user-select: none;
     }
     .message-bar {
@@ -141,8 +145,8 @@ router.get("/reset-password", (req, res) => {
 
     const message = "${message}";
     const type = "${type}";
+    const bar = document.getElementById("msgBar");
     if (message) {
-      const bar = document.getElementById("msgBar");
       bar.style.display = "block";
       bar.classList.add(type === "success" ? "success-bar" : "error-bar");
     }
@@ -165,8 +169,6 @@ router.get("/reset-password", (req, res) => {
 </html>
   `);
 });
-
-
 
 router.post("/reset-password", resetPassword);
 

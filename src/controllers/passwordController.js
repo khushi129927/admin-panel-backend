@@ -30,7 +30,8 @@ exports.forgotPassword = async (req, res) => {
       email,
     ]);
 
-    const resetLink = `http://neuroeq-env-1.eba-ex2g2zu6.ap-south-1.elasticbeanstalk.com/api/password/reset-password?token=abc123xyz`;
+    const resetLink = `http://neuroeq-env-1.eba-ex2g2zu6.ap-south-1.elasticbeanstalk.com/api/password/reset-password?token=${token}`;
+
 
     await transporter.sendMail({
       from: `"NeuroEQ Support" <${process.env.MAIL_USER}>`,

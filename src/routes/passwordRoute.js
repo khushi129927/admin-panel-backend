@@ -25,148 +25,117 @@ router.get("/reset-password", (req, res) => {
   <title>Reset Password</title>
   <style>
     body {
-      font-family: Arial, sans-serif;
-      background: #f2f2f2;
-      padding: 40px;
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f4f4f4;
       display: flex;
       justify-content: center;
+      align-items: center;
+      height: 100vh;
     }
     .container {
-      background: white;
-      padding: 30px 40px;
+      background-color: #fff;
+      padding: 30px;
       border-radius: 10px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-      max-width: 400px;
-      width: 100%;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+      width: 300px;
     }
     h2 {
+      margin-bottom: 20px;
       text-align: center;
+      color: #333;
+    }
+    .input-group {
+      position: relative;
       margin-bottom: 20px;
     }
-    label {
-      font-weight: bold;
-      display: block;
-      margin-top: 15px;
-    }
-    .password-wrapper {
-      position: relative;
-    }
-    input[type="password"], input[type="text"] {
+    .input-group input {
       width: 100%;
-      padding: 10px;
-      margin-top: 5px;
-      margin-bottom: 15px;
+      padding: 10px 35px 10px 10px;
+      box-sizing: border-box;
       border-radius: 5px;
       border: 1px solid #ccc;
-      box-sizing: border-box;
     }
     .toggle-btn {
       position: absolute;
       right: 10px;
-      top: 50%;
-      transform: translateY(-50%);
+      top: 9px;
       background: none;
       border: none;
-      cursor: pointer;
-      font-size: 13px;
       color: #007bff;
-      font-weight: bold;
+      font-size: 13px;
+      cursor: pointer;
+      padding: 0;
     }
-    .message-bar {
+    .submit-btn {
+      width: 100%;
       padding: 10px;
-      border-radius: 5px;
-      margin-bottom: 10px;
-      font-size: 14px;
-      text-align: center;
-      display: none;
-    }
-    .error-bar {
-      background: #ffdddd;
-      color: #b40000;
-    }
-    .success-bar {
-      background: #ddffdd;
-      color: #007300;
-    }
-    button[type="submit"] {
-      background: #007bff;
-      color: white;
-      padding: 10px 15px;
+      background-color: #007bff;
+      color: #fff;
       border: none;
       border-radius: 5px;
-      width: 100%;
       cursor: pointer;
       font-size: 16px;
     }
-    button[type="submit"]:hover {
-      background: #0056b3;
+    .submit-btn:hover {
+      background-color: #0056b3;
     }
   </style>
 </head>
 <body>
+
   <div class="container">
-    <h2>Reset Your Password</h2>
-
-    <div id="msgBar" class="message-bar">${message}</div>
-
-    <form id="resetForm" method="POST" action="/api/password/reset-password">
-      <input type="hidden" name="token" value="${token}" />
-
-      <label for="newPassword">New Password</label>
-      <div class="password-wrapper">
-        <input type="password" name="newPassword" id="newPassword" required />
-        <button type="button" class="toggle-btn" id="toggleNew">Show</button>
+    <h2>Reset Password</h2>
+    <form id="resetForm">
+      <div class="input-group">
+        <input type="password" id="password" placeholder="New Password" required />
+        <button type="button" class="toggle-btn" onclick="togglePassword('password', this)">Show</button>
       </div>
-
-      <label for="confirmPassword">Confirm Password</label>
-      <div class="password-wrapper">
-        <input type="password" id="confirmPassword" required />
-        <button type="button" class="toggle-btn" id="toggleConfirm">Show</button>
+      <div class="input-group">
+        <input type="password" id="confirmPassword" placeholder="Confirm Password" required />
+        <button type="button" class="toggle-btn" onclick="togglePassword('confirmPassword', this)">Show</button>
       </div>
-
-      <button type="submit">Reset Password</button>
+      <button type="submit" class="submit-btn">Reset Password</button>
     </form>
   </div>
 
   <script>
-    function setupToggle(inputId, toggleBtnId) {
-      const input = document.getElementById(inputId);
-      const toggleBtn = document.getElementById(toggleBtnId);
+    // Get token from URL like ?token=abc123
+    const token = new URLSearchParams(window.location.search).get("token");
 
-      toggleBtn.addEventListener("click", () => {
-        const isHidden = input.type === "password";
-        input.type = isHidden ? "text" : "password";
-        toggleBtn.textContent = isHidden ? "Hide" : "Show";
-      });
-    }
-
-    setupToggle("newPassword", "toggleNew");
-    setupToggle("confirmPassword", "toggleConfirm");
-
-    const message = "${message}";
-    const type = "${type}";
-    if (message) {
-      const bar = document.getElementById("msgBar");
-      bar.style.display = "block";
-      bar.classList.add(type === "success" ? "success-bar" : "error-bar");
-    }
-
-    document.getElementById("resetForm").addEventListener("submit", function(e) {
-      const newPwd = document.getElementById("newPassword").value;
-      const confirmPwd = document.getElementById("confirmPassword").value;
-
-      if (newPwd !== confirmPwd) {
-        e.preventDefault();
-        const msgBar = document.getElementById("msgBar");
-        msgBar.textContent = "Passwords do not match.";
-        msgBar.classList.remove("success-bar");
-        msgBar.classList.add("error-bar");
-        msgBar.style.display = "block";
+    function togglePassword(id, btn) {
+      const input = document.getElementById(id);
+      if (input.type === "password") {
+        input.type = "text";
+        btn.textContent = "Hide";
+      } else {
+        input.type = "password";
+        btn.textContent = "Show";
       }
+    }
+
+    document.getElementById("resetForm").addEventListener("submit", async function (e) {
+      e.preventDefault();
+
+      const password = document.getElementById("password").value;
+      const confirmPassword = document.getElementById("confirmPassword").value;
+
+      const res = await fetch("https://neuroeq-env-1.eba-ex2g2zu6.ap-south-1.elasticbeanstalk.com/api/password/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token, password, confirmPassword })
+      });
+
+      const data = await res.json();
+      alert(data.message || data.error || "Something went wrong");
     });
   </script>
+
 </body>
 </html>
+
+
   `);
 });
 

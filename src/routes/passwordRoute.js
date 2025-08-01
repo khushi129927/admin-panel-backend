@@ -104,7 +104,7 @@ router.get("/reset-password", (req, res) => {
   <div class="container">
     <h2>Reset Your Password</h2>
 
-    <div id="msgBar" class="message-bar">${message}</div>
+    <div id="msgBar" class="message-bar ${type === 'success' ? 'success-bar' : (type === 'error' ? 'error-bar' : '')}">${message}</div>
 
     <form id="resetForm" method="POST" action="/api/password/reset-password">
       <input type="hidden" name="token" value="${token}" />

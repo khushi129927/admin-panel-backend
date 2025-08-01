@@ -1,6 +1,10 @@
 const express = require("express");
+const path = require("path");
 const router = express.Router();
 const { forgotPassword, resetPassword } = require("../controllers/passwordController");
+
+// Serve static images
+router.use('/images', express.static(path.join(__dirname, '../images')));
 
 router.post("/forgot-password", forgotPassword);
 
@@ -62,9 +66,8 @@ router.get("/reset-password", (req, res) => {
       top: 50%;
       transform: translateY(-50%);
       cursor: pointer;
-      width: 20px;
-      height: 20px;
-      user-select: none;
+      width: 24px;
+      height: 24px;
     }
     .message-bar {
       padding: 10px;
@@ -109,13 +112,13 @@ router.get("/reset-password", (req, res) => {
       <label for="newPassword">New Password</label>
       <div class="password-wrapper">
         <input type="password" name="newPassword" id="newPassword" required />
-        <img src="/images/eye-closed.png" class="toggle-eye" id="toggleNew" data-open="/images/eye-open.png" data-closed="/images/eye-closed.png" />
+        <img src="/images/icons8-eye-50.png" class="toggle-eye" id="toggleNew" />
       </div>
 
       <label for="confirmPassword">Confirm Password</label>
       <div class="password-wrapper">
         <input type="password" id="confirmPassword" required />
-        <img src="/images/eye-closed.png" class="toggle-eye" id="toggleConfirm" data-open="/images/eye-open.png" data-closed="/images/eye-closed.png" />
+        <img src="/images/icons8-eye-50.png" class="toggle-eye" id="toggleConfirm" />
       </div>
 
       <button type="submit">Reset Password</button>
@@ -123,20 +126,15 @@ router.get("/reset-password", (req, res) => {
   </div>
 
   <script>
-    function setupToggle(id, inputId) {
-      const icon = document.getElementById(id);
+    function setupToggle(iconId, inputId) {
+      const icon = document.getElementById(iconId);
       const input = document.getElementById(inputId);
-      const openSrc = icon.getAttribute("data-open");
-      const closedSrc = icon.getAttribute("data-closed");
+      let isVisible = false;
 
       icon.addEventListener("click", () => {
-        if (input.type === "password") {
-          input.type = "text";
-          icon.src = openSrc;
-        } else {
-          input.type = "password";
-          icon.src = closedSrc;
-        }
+        isVisible = !isVisible;
+        input.type = isVisible ? "text" : "password";
+        icon.src = isVisible ? "/images/icons8-closed-eye-24.png" : "/images/icons8-eye-50.png";
       });
     }
 
@@ -167,9 +165,27 @@ router.get("/reset-password", (req, res) => {
   </script>
 </body>
 </html>
-  `);
+`);
 });
 
-router.post("/reset-password", resetPassword);
+router.post("/reset-password", async (req, res, next) => {
+  const { newPassword, token } = req.body;
+
+  try {
+    const result = await resetPassword(newPassword, token); // You likely handle actual logic here
+
+    if (result === "same-as-previous") {
+      return res.redirect(`/api/password/reset-password?token=${token}&message=${encodeURIComponent("Password cannot be the same as the previous one.")}&type=error`);
+    }
+
+    if (result === "success") {
+      return res.redirect(`/api/password/reset-password?token=${token}&message=${encodeURIComponent("Password updated successfully.")}&type=success`);
+    }
+
+    return res.status(400).send("Unexpected response.");
+  } catch (err) {
+    next(err);
+  }
+});
 
 module.exports = router;

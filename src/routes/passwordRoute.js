@@ -1,7 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const bcrypt = require("bcrypt");
-const db = require("../config/db"); // adjust if your DB config is named differently
+const { forgotPassword, resetPassword } = require("../controllers/passwordController");
 
 router.post("/forgot-password", forgotPassword);
 
@@ -171,28 +170,6 @@ router.get("/reset-password", (req, res) => {
   `);
 });
 
-router.post("/reset-password", async (req, res) => {
-  const { token, newPassword } = req.body;
-
-  try {
-    const [rows] = await db.query("SELECT * FROM users WHERE resetToken = ?", [token]);
-    if (!rows.length) {
-      return res.redirect(`/api/password/reset-password?token=${token}&message=${encodeURIComponent("Invalid or expired token.")}&type=error`);
-    }
-
-    const user = rows[0];
-    const isSame = await bcrypt.compare(newPassword, user.password);
-    if (isSame) {
-      return res.redirect(`/api/password/reset-password?token=${token}&message=${encodeURIComponent("Password cannot be the same as the previous one.")}&type=error`);
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await db.query("UPDATE users SET password = ?, resetToken = NULL WHERE userId = ?", [hashedPassword, user.userId]);
-
-    return res.redirect(`/api/password/reset-password?token=${token}&message=${encodeURIComponent("Password updated successfully.")}&type=success`);
-  } catch (error) {
-    return res.redirect(`/api/password/reset-password?token=${token}&message=${encodeURIComponent("An error occurred.")}&type=error`);
-  }
-});
+router.post("/reset-password", resetPassword);
 
 module.exports = router;

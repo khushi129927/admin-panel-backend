@@ -1,8 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const db = require("../config/db");
-const bcrypt = require("bcrypt");
-const { forgotPassword } = require("../controllers/passwordController");
+const { forgotPassword, resetPassword } = require("../controllers/passwordController");
 
 router.post("/forgot-password", forgotPassword);
 
@@ -106,7 +104,7 @@ router.get("/reset-password", (req, res) => {
   <div class="container">
     <h2>Reset Your Password</h2>
 
-    <div id="msgBar" class="message-bar">${message}</div>
+    <div id="msgBar" class="message-bar ${type === 'success' ? 'success-bar' : (type === 'error' ? 'error-bar' : '')}">${message}</div>
 
     <form id="resetForm" method="POST" action="/api/password/reset-password">
       <input type="hidden" name="token" value="${token}" />
@@ -172,31 +170,6 @@ router.get("/reset-password", (req, res) => {
   `);
 });
 
-router.post("/reset-password", async (req, res) => {
-  const { token, newPassword } = req.body;
-
-  try {
-    const [userRows] = await db.query("SELECT * FROM users WHERE resetToken = ?", [token]);
-
-    if (!userRows || userRows.length === 0) {
-      return res.redirect(`/api/password/reset-password?token=${token}&message=${encodeURIComponent("Invalid or expired token.")}&type=error`);
-    }
-
-    const user = userRows[0];
-
-    const passwordMatch = await bcrypt.compare(newPassword, user.password);
-    if (passwordMatch) {
-      return res.redirect(`/api/password/reset-password?token=${token}&message=${encodeURIComponent("Password cannot be the same as the previous one.")}&type=error`);
-    }
-
-    const hashedPassword = await bcrypt.hash(newPassword, 10);
-    await db.query("UPDATE users SET password = ?, resetToken = NULL WHERE userId = ?", [hashedPassword, user.userId]);
-
-    return res.redirect(`/api/password/reset-password?token=${token}&message=${encodeURIComponent("Password successfully reset.")}&type=success`);
-  } catch (error) {
-    console.error("Error resetting password:", error);
-    return res.status(500).send("Something went wrong.");
-  }
-});
+router.post("/reset-password", resetPassword);
 
 module.exports = router;

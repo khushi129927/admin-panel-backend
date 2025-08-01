@@ -200,7 +200,7 @@ router.post("/reset-password", async (req, res) => {
     return res.redirect(`/api/password/reset-password?token=${token}&message=${encodeURIComponent("Password successfully reset.")}&type=success`);
   } catch (error) {
     console.error("Error resetting password:", error);
-    return res.status(500).send("Something went wrong.");
+    return res.status(500).send("Something went wrong.", error.message);
   }
 });
 

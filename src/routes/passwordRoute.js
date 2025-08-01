@@ -53,21 +53,24 @@ router.get("/reset-password", (req, res) => {
     }
     input[type="password"], input[type="text"] {
       width: 100%;
-      padding: 10px 40px 10px 10px;
+      padding: 10px;
       margin-top: 5px;
       margin-bottom: 15px;
       border-radius: 5px;
       border: 1px solid #ccc;
       box-sizing: border-box;
     }
-    .toggle-eye {
+    .toggle-btn {
       position: absolute;
       right: 10px;
       top: 50%;
       transform: translateY(-50%);
+      background: none;
+      border: none;
       cursor: pointer;
-      width: 24px;
-      height: 24px;
+      font-size: 13px;
+      color: #007bff;
+      font-weight: bold;
     }
     .message-bar {
       padding: 10px;
@@ -85,7 +88,7 @@ router.get("/reset-password", (req, res) => {
       background: #ddffdd;
       color: #007300;
     }
-    button {
+    button[type="submit"] {
       background: #007bff;
       color: white;
       padding: 10px 15px;
@@ -95,7 +98,7 @@ router.get("/reset-password", (req, res) => {
       cursor: pointer;
       font-size: 16px;
     }
-    button:hover {
+    button[type="submit"]:hover {
       background: #0056b3;
     }
   </style>
@@ -112,13 +115,13 @@ router.get("/reset-password", (req, res) => {
       <label for="newPassword">New Password</label>
       <div class="password-wrapper">
         <input type="password" name="newPassword" id="newPassword" required />
-        <img src="/images/icons8-eye-50.png" class="toggle-eye" id="toggleNew" />
+        <button type="button" class="toggle-btn" id="toggleNew">Show</button>
       </div>
 
       <label for="confirmPassword">Confirm Password</label>
       <div class="password-wrapper">
         <input type="password" id="confirmPassword" required />
-        <img src="/images/icons8-eye-50.png" class="toggle-eye" id="toggleConfirm" />
+        <button type="button" class="toggle-btn" id="toggleConfirm">Show</button>
       </div>
 
       <button type="submit">Reset Password</button>
@@ -126,20 +129,19 @@ router.get("/reset-password", (req, res) => {
   </div>
 
   <script>
-    function setupToggle(iconId, inputId) {
-      const icon = document.getElementById(iconId);
+    function setupToggle(inputId, toggleBtnId) {
       const input = document.getElementById(inputId);
-      let isVisible = false;
+      const toggleBtn = document.getElementById(toggleBtnId);
 
-      icon.addEventListener("click", () => {
-        isVisible = !isVisible;
-        input.type = isVisible ? "text" : "password";
-        icon.src = isVisible ? "/images/icons8-closed-eye-24.png" : "/images/icons8-eye-50.png";
+      toggleBtn.addEventListener("click", () => {
+        const isHidden = input.type === "password";
+        input.type = isHidden ? "text" : "password";
+        toggleBtn.textContent = isHidden ? "Hide" : "Show";
       });
     }
 
-    setupToggle("toggleNew", "newPassword");
-    setupToggle("toggleConfirm", "confirmPassword");
+    setupToggle("newPassword", "toggleNew");
+    setupToggle("confirmPassword", "toggleConfirm");
 
     const message = "${message}";
     const type = "${type}";
@@ -165,7 +167,7 @@ router.get("/reset-password", (req, res) => {
   </script>
 </body>
 </html>
-`);
+  `);
 });
 
 router.post("/reset-password", async (req, res, next) => {

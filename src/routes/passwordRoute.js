@@ -7,6 +7,7 @@ router.post("/forgot-password", forgotPassword);
 router.get("/reset-password", (req, res) => {
   const token = req.query.token;
   const message = req.query.message || "";
+  const type = req.query.type || "";
 
   if (!token) {
     return res.status(400).send("<h3>Invalid or missing token</h3>");
@@ -16,7 +17,7 @@ router.get("/reset-password", (req, res) => {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Reset Password</title>
   <style>
     body {
@@ -43,32 +44,42 @@ router.get("/reset-password", (req, res) => {
       display: block;
       margin-top: 15px;
     }
-    input[type="password"] {
+    .password-wrapper {
+      position: relative;
+    }
+    input[type="password"], input[type="text"] {
       width: 100%;
-      padding: 10px;
+      padding: 10px 40px 10px 10px;
       margin-top: 5px;
       margin-bottom: 15px;
       border-radius: 5px;
       border: 1px solid #ccc;
-    }
-    .password-wrapper {
-      position: relative;
+      box-sizing: border-box;
     }
     .toggle-eye {
       position: absolute;
       right: 10px;
-      top: 13px;
+      top: 50%;
+      transform: translateY(-50%);
       cursor: pointer;
+      font-size: 18px;
+      user-select: none;
     }
     .message-bar {
-      background: #ffdddd;
-      color: #b40000;
       padding: 10px;
       border-radius: 5px;
       margin-bottom: 10px;
-      display: none;
       font-size: 14px;
       text-align: center;
+      display: none;
+    }
+    .error-bar {
+      background: #ffdddd;
+      color: #b40000;
+    }
+    .success-bar {
+      background: #ddffdd;
+      color: #007300;
     }
     button {
       background: #007bff;
@@ -111,23 +122,31 @@ router.get("/reset-password", (req, res) => {
   </div>
 
   <script>
-    // Eye toggles
-    document.getElementById("toggleNew").addEventListener("click", () => {
-      const pwd = document.getElementById("newPassword");
-      pwd.type = pwd.type === "password" ? "text" : "password";
-    });
-
-    document.getElementById("toggleConfirm").addEventListener("click", () => {
-      const pwd = document.getElementById("confirmPassword");
-      pwd.type = pwd.type === "password" ? "text" : "password";
-    });
-
-    // Show error if message exists
-    if ("${message}") {
-      document.getElementById("msgBar").style.display = "block";
+    function setupToggle(id, inputId) {
+      const icon = document.getElementById(id);
+      const input = document.getElementById(inputId);
+      icon.addEventListener("click", () => {
+        if (input.type === "password") {
+          input.type = "text";
+          icon.textContent = "images\icons8-closed-eye-24.png";
+        } else {
+          input.type = "password";
+          icon.textContent = "images\icons8-eye-50.png";
+        }
+      });
     }
 
-    // Confirm password match check before submit
+    setupToggle("toggleNew", "newPassword");
+    setupToggle("toggleConfirm", "confirmPassword");
+
+    const message = "${message}";
+    const type = "${type}";
+    if (message) {
+      const bar = document.getElementById("msgBar");
+      bar.style.display = "block";
+      bar.classList.add(type === "success" ? "success-bar" : "error-bar");
+    }
+
     document.getElementById("resetForm").addEventListener("submit", function(e) {
       const newPwd = document.getElementById("newPassword").value;
       const confirmPwd = document.getElementById("confirmPassword").value;
@@ -136,6 +155,8 @@ router.get("/reset-password", (req, res) => {
         e.preventDefault();
         const msgBar = document.getElementById("msgBar");
         msgBar.textContent = "Passwords do not match.";
+        msgBar.classList.remove("success-bar");
+        msgBar.classList.add("error-bar");
         msgBar.style.display = "block";
       }
     });
@@ -144,6 +165,7 @@ router.get("/reset-password", (req, res) => {
 </html>
   `);
 });
+
 
 
 router.post("/reset-password", resetPassword);

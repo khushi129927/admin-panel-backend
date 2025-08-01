@@ -62,7 +62,8 @@ router.get("/reset-password", (req, res) => {
       top: 50%;
       transform: translateY(-50%);
       cursor: pointer;
-      font-size: 18px;
+      width: 20px;
+      height: 20px;
       user-select: none;
     }
     .message-bar {
@@ -108,13 +109,13 @@ router.get("/reset-password", (req, res) => {
       <label for="newPassword">New Password</label>
       <div class="password-wrapper">
         <input type="password" name="newPassword" id="newPassword" required />
-        <span class="toggle-eye" id="toggleNew">👁️</span>
+        <img src="/images/eye-closed.png" class="toggle-eye" id="toggleNew" data-open="/images/eye-open.png" data-closed="/images/eye-closed.png" />
       </div>
 
       <label for="confirmPassword">Confirm Password</label>
       <div class="password-wrapper">
         <input type="password" id="confirmPassword" required />
-        <span class="toggle-eye" id="toggleConfirm">👁️</span>
+        <img src="/images/eye-closed.png" class="toggle-eye" id="toggleConfirm" data-open="/images/eye-open.png" data-closed="/images/eye-closed.png" />
       </div>
 
       <button type="submit">Reset Password</button>
@@ -125,13 +126,16 @@ router.get("/reset-password", (req, res) => {
     function setupToggle(id, inputId) {
       const icon = document.getElementById(id);
       const input = document.getElementById(inputId);
+      const openSrc = icon.getAttribute("data-open");
+      const closedSrc = icon.getAttribute("data-closed");
+
       icon.addEventListener("click", () => {
         if (input.type === "password") {
           input.type = "text";
-          icon.textContent = "images\icons8-closed-eye-24.png";
+          icon.src = openSrc;
         } else {
           input.type = "password";
-          icon.textContent = "images\icons8-eye-50.png";
+          icon.src = closedSrc;
         }
       });
     }
@@ -165,8 +169,6 @@ router.get("/reset-password", (req, res) => {
 </html>
   `);
 });
-
-
 
 router.post("/reset-password", resetPassword);
 

@@ -8,8 +8,6 @@ router.post("/forgot-password", forgotPassword);
 
 router.get("/reset-password", (req, res) => {
   const token = req.query.token;
-  const message = req.query.message || "";
-  const type = req.query.type || "";
 
   if (!token) {
     return res.send(`
@@ -106,7 +104,7 @@ router.get("/reset-password", (req, res) => {
   <div class="container">
     <h2>Reset Your Password</h2>
 
-    <div id="msgBar" class="message-bar">${message}</div>
+    <div id="msgBar" class="message-bar"></div>
 
     <form id="resetForm" method="POST" action="/api/password/reset-password">
       <input type="hidden" name="token" value="${token}" />
@@ -145,14 +143,21 @@ router.get("/reset-password", (req, res) => {
     setupToggle("toggleNew", "newPassword");
     setupToggle("toggleConfirm", "confirmPassword");
 
-    const message = "${message}";
-    const type = "${type}";
-    const bar = document.getElementById("msgBar");
-    if (message) {
-      bar.style.display = "block";
-      bar.classList.add(type === "success" ? "success-bar" : "error-bar");
-    }
+    // Display success/error from backend
+    document.addEventListener("DOMContentLoaded", () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const message = urlParams.get("message");
+      const type = urlParams.get("type");
+      const bar = document.getElementById("msgBar");
 
+      if (message) {
+        bar.textContent = message;
+        bar.style.display = "block";
+        bar.classList.add(type === "success" ? "success-bar" : "error-bar");
+      }
+    });
+
+    // Check confirm password match
     document.getElementById("resetForm").addEventListener("submit", function(e) {
       const newPwd = document.getElementById("newPassword").value;
       const confirmPwd = document.getElementById("confirmPassword").value;

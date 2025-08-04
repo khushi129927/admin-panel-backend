@@ -6,7 +6,7 @@ const auth = require("../middleware/authMiddleware");
 // ✅ Core Subscription Routes
 router.post("/create", auth, createSubscription);          // Create subscription via Razorpay
 router.get("/get-all", auth, getSubscriptions);            // Get all subscriptions
-router.get("/:userId", auth, getSubscription);             // Get a specific user's subscription
+router.get("/:childId", auth, getSubscription);             // Get a specific user's subscription
 router.put("/update", auth, updateSubscription);           // Update subscription details
 
 // 💳 Payment History

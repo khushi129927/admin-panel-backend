@@ -113,6 +113,10 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: "Internal Server Error", details: err.message });
 });
 
+app.use(express.json({ limit: '100mb' }));
+app.use(express.urlencoded({ extended: true, limit: '100mb' }));
+
+
 app.use((err, req, res, next) => {
   console.error("❌ Error URL:", req.originalUrl);
   console.error("❌ Method:", req.method);

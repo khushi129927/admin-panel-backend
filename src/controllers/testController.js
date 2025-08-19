@@ -7,7 +7,7 @@ const multer = require("multer");
 const storage = multer.memoryStorage();
 const upload = multer({ storage }).single("file");
 
-// 📁 Upload Excel & Insert Test Questions
+// 📁 Upload Excel & Insert Test Questions (All Sheets)
 exports.uploadTestQuestions = async (req, res) => {
   try {
     await new Promise((resolve, reject) => {
@@ -20,27 +20,50 @@ exports.uploadTestQuestions = async (req, res) => {
     if (!req.file) return res.status(400).json({ error: "No file uploaded" });
 
     const workbook = xlsx.read(req.file.buffer, { type: "buffer" });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rawData = xlsx.utils.sheet_to_json(sheet);
+    let allEntries = [];
 
-    if (!rawData.length) return res.status(400).json({ error: "No valid entries found in sheet" });
+    // Loop through all sheets
+    workbook.SheetNames.forEach((sheetName) => {
+      const sheet = workbook.Sheets[sheetName];
+      const rawData = xlsx.utils.sheet_to_json(sheet);
 
-    const entries = rawData.map((row) => ([
-      uuidv4(),
-      row.Quarter || "",
-      row.Age || "",
-      row.Objective || "",
-      row.Question || "",
-      row["Option 1"] || "",
-      row["Points 1"] || "",
-      row["Option 2"] || "",
-      row["Points 2"] || "",
-      row["Option 3"] || "",
-      row["Points 3"] || "",
-      row["Option 4"] || "",
-      row["Points 4"] || "",
-      new Date()
-    ]));
+      if (rawData.length) {
+        const entries = rawData.map((row) => ([
+          uuidv4(),
+          (row.Quarter || "").trim(),
+          (row.Age || "").trim(),
+          row.Objective || "",
+          row.Question || "",
+          row["Option 1"] || "",
+          row["Points 1"] || "",
+          row["Option 2"] || "",
+          row["Points 2"] || "",
+          row["Option 3"] || "",
+          row["Points 3"] || "",
+          row["Option 4"] || "",
+          row["Points 4"] || "",
+          new Date()
+        ]));
+
+        allEntries.push(...entries);
+      }
+    });
+
+    if (!allEntries.length) {
+      return res.status(400).json({ error: "No valid entries found in sheet(s)" });
+    }
+
+    // ✅ Prevent duplicates before inserting
+    // Convert each row into a unique key (Quarter+Age+Question)
+    const uniqueMap = new Map();
+    allEntries.forEach((entry) => {
+      const key = `${entry[1]}-${entry[2]}-${entry[4]}`.toLowerCase(); 
+      if (!uniqueMap.has(key)) {
+        uniqueMap.set(key, entry);
+      }
+    });
+
+    const finalEntries = Array.from(uniqueMap.values());
 
     const sql = `INSERT INTO tests (
       testId, quarter, age, objective, question,
@@ -50,20 +73,23 @@ exports.uploadTestQuestions = async (req, res) => {
     ) VALUES ?`;
 
     try {
-      await db.query(sql, [entries]);
+      await db.query(sql, [finalEntries]);
     } catch (dbError) {
       console.error("❌ Database Error:", dbError.message);
-      console.error(dbError.stack);
       return res.status(500).json({ error: "Database Error", details: dbError.message });
     }
 
-    res.status(201).json({ success: true, message: `${entries.length} questions uploaded successfully` });
+    res.status(201).json({ 
+      success: true, 
+      message: `${finalEntries.length} unique questions uploaded successfully` 
+    });
+
   } catch (error) {
     console.error("❌ Upload Error:", error.message);
-    console.error(error.stack);
     res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };
+
 
 // 📤 Get All Tests (Async/Await)
 exports.getTests = async (req, res) => {

@@ -103,22 +103,32 @@ exports.getTests = async (req, res) => {
   }
 };
 
+// 📁 Fetch Tests According to Child's Age
 exports.getTestsByAge = async (req, res) => {
   try {
-    // Normalize input age to use standard hyphen
-    const inputAge = req.params.age.replace(/–/g, "-");
+    const { age } = req.params; // e.g. "13-15 years"
 
-    // Query replacing en dash with hyphen in DB field as well
-    const [results] = await db.execute(
-      "SELECT * FROM tests WHERE REPLACE(age, '–', '-') = ? ORDER BY created_at DESC",
-      [inputAge]
-    );
+    if (!age) {
+      return res.status(400).json({ error: "Age is required" });
+    }
 
-    res.status(200).json({ success: true, data: results });
+    const sql = `
+      SELECT * FROM tests 
+      WHERE age = ? 
+      ORDER BY quarter
+    `;
+
+    const [rows] = await db.query(sql, [age]);
+
+    if (!rows.length) {
+      return res.status(404).json({ message: "No tests found for this age group" });
+    }
+
+    res.status(200).json({ success: true, data: rows });
+
   } catch (error) {
-    console.error("❌ Get Tests Error:", error.message);
-    console.error(error.stack);
-    res.status(500).json({ error: "Failed to get test questions." });
+    console.error("❌ Fetch Error:", error.message);
+    res.status(500).json({ error: "Internal Server Error", details: error.message });
   }
 };
 

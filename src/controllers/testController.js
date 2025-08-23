@@ -153,8 +153,20 @@ exports.getTestsByAgeAndQuarter = async (req, res) => {
     return res.status(400).json({ error: "Both age and quarter are required." });
   }
 
-  // Normalize only age
+  // --- Normalize Age ---
+  // Ensure dash consistency
   age = age.replace(/–/g, "-");
+
+  // If client sends "7-9" without "years", add it
+  if (!age.toLowerCase().includes("years")) {
+    age = age + " years";
+  }
+
+  // --- Normalize Quarter ---
+  // Convert "Quarter 1" → "Q1"
+  if (/^Quarter\s*\d+$/i.test(quarter)) {
+    quarter = "Q" + quarter.split(" ")[1];
+  }
 
   try {
     const [results] = await db.execute(

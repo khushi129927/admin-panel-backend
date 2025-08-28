@@ -154,29 +154,58 @@ exports.getTestsByAgeAndQuarter = async (req, res) => {
   }
 
   // --- Normalize Age ---
-  // Ensure dash consistency
-  age = age.replace(/–/g, "-");
-
-  // If client sends "7-9" without "years", add it
-  if (!age.toLowerCase().includes("years")) {
-    age = age + " years";
-  }
+  age = age.replace(/–/g, "-").trim(); // replace en-dash with hyphen
+  const isSingleAge = /^\d+$/.test(age); // true if input is just a number like "8"
 
   // --- Normalize Quarter ---
-  // Convert "Quarter 1" → "Q1"
   if (/^Quarter\s*\d+$/i.test(quarter)) {
     quarter = "Q" + quarter.split(" ")[1];
   }
 
   try {
+    let finalAgeGroup = null;
+
+    if (isSingleAge) {
+      const [ageGroups] = await db.execute("SELECT DISTINCT age FROM tests");
+
+      const inputAge = parseInt(age, 10);
+
+      for (let row of ageGroups) {
+        const rangeStr = row.age.toString().toLowerCase().replace(/–/g, "-");
+        const match = rangeStr.match(/(\d+)\s*-\s*(\d+)/); // match "7-9"
+        if (match) {
+          const min = parseInt(match[1], 10);
+          const max = parseInt(match[2], 10);
+          if (inputAge >= min && inputAge <= max) {
+            finalAgeGroup = row.age; // use DB's stored format (e.g., "7-9 years")
+            break;
+          }
+        }
+      }
+
+      if (!finalAgeGroup) {
+        return res.status(404).json({
+          success: false,
+          message: `No age group found for age ${age}`,
+        });
+      }
+    } else {
+      // If range provided like "7-9" or "7-9 years"
+      finalAgeGroup = age.toLowerCase().includes("years") ? age : `${age} years`;
+    }
+
+    // --- Fetch Tests ---
     const [results] = await db.execute(
-      "SELECT * FROM tests WHERE REPLACE(age, '–', '-') = ? AND quarter = ? ORDER BY created_at DESC",
-      [age, quarter]
+      `SELECT * FROM tests 
+       WHERE REPLACE(LOWER(age), '–', '-') = ? 
+       AND quarter = ? 
+       ORDER BY created_at DESC`,
+      [finalAgeGroup.toLowerCase(), quarter]
     );
 
     res.status(200).json({
       success: true,
-      message: `Tests for Age ${age} and Quarter ${quarter}`,
+      message: `Tests for Age ${finalAgeGroup} and Quarter ${quarter}`,
       data: results,
     });
   } catch (error) {
@@ -184,3 +213,4 @@ exports.getTestsByAgeAndQuarter = async (req, res) => {
     res.status(500).json({ error: "Failed to get test questions." });
   }
 };
+
